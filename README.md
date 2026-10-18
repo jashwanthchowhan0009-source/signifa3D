@@ -2,12 +2,14 @@
 
 Interactive 3D website for [Signifa Builders & Developers](https://signifadevelopers.com/), Hyderabad.
 
-- **3D villa** (`assets/house.glb`) — the LHouse SketchUp model, painted into luxury materials
-  (charcoal stone, gloss-white bands and fins, amber-lit glazing, timber, garden) and
-  meshopt-compressed from 15.7 MB to ~1 MB.
-- **Slides** — scroll through near and far camera shots: roof, pool, sky gardens, tower, aerial, projects.
-- **Sun dial** — drag from sunrise to night; shadows move, windows and pool light up after dark.
-- **Hotspots, drag-to-turn, letter/word reveals, tilt cards, EMI calculator, WhatsApp site-visit form.**
+- **Walk-through tour** — scroll from the gate, past the lobby, up the lift to the fifth floor,
+  through the teak front door and into every room of a representative 3 BHK
+  (living, balcony, dining & kitchen, three bedrooms).
+- **Built in code** — the tower, site, flat, furniture and lighting are generated in `main.js`
+  with Three.js. No model files to download, so it loads fast.
+- **Live floor plan** — a mini plan shows where you are and which way you face. Click a room to jump there.
+- **Sun dial** — drag from sunrise to night; sky, shadows, windows and room lights follow.
+- **Projects, amenities and specifications** from signifadevelopers.com, EMI calculator, WhatsApp site-visit form.
 
 ## Run locally
 
@@ -29,8 +31,8 @@ Static files only — GitHub Pages, Vercel or Netlify. Three.js loads from jsDel
 
 | File | What it is |
 | --- | --- |
-| `index.html` | Page content and slides (each `data-cam` = azimuth, elevation, distance, target x,y,z) |
+| `index.html` | Page content: one slide per tour stop, then projects, amenities and contact |
 | `styles.css` | Bronze / gold / ivory theme, layout, transitions |
-| `main.js` | Three.js scene, materials, sun, camera path, hotspots |
+| `main.js` | Builds the tower and the 3 BHK, sun and lights, tour camera (`STOPS`), floor plan |
 | `interactions.js` | Text reveals, count-ups, tilt cards, magnetic buttons, EMI calculator |
 | `assets/` | Painted model, walkthrough video and poster |

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Signifa Builders & Developers, Hyderabad</title>
-  <meta name="description" content="Signifa Builders & Developers, Hyderabad. RERA-registered, Vastu-compliant luxury homes at Machabollaram and Suchitra. Explore a Signifa villa in 3D.">
+  <meta name="description" content="Signifa Builders & Developers, Hyderabad. RERA-registered, Vastu-compliant luxury homes at Machabollaram and Suchitra. Walk through a Signifa home in 3D.">
   <meta name="theme-color" content="#6FA3D8">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -54,7 +54,7 @@
       <span>Signifa</span>
     </a>
     <nav aria-label="Main">
-      <a href="#s-ribbon">The villa</a>
+      <a href="#s-arrive">The tour</a>
       <a href="#projects">Projects</a>
       <a href="#values">About</a>
       <a href="#contact">Contact</a>
@@ -65,21 +65,26 @@
   <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
   <ol class="pager" id="pager" aria-label="Slides"></ol>
   <p class="counter" id="counter" aria-live="polite"><span id="counterNum">01</span><span class="counter-of"> / <span id="counterTotal">09</span></span><span class="counter-name" id="counterName">Welcome</span></p>
-  <div class="hotspots" id="hotspots"></div>
+  <div class="fade" id="fade" aria-hidden="true"><p>Taking the lift to the fifth floor</p></div>
+  <p class="room-tag" id="roomTag" aria-hidden="true"><b></b><span></span></p>
+  <figure class="plan" id="plan" aria-label="Floor plan of the 3 BHK home">
+    <svg id="planSvg" viewBox="-0.6 -0.6 16.2 13.2"></svg>
+    <figcaption>Representative 3 BHK, approx. 1,900 sq ft</figcaption>
+  </figure>
 
   <main id="top">
     <!-- 1. HERO, far -->
-    <section class="slide hero" id="s-hero" data-name="Welcome" data-word="SIGNIFA" data-cam="118,13,92,0,11,0" aria-label="Introduction">
+    <!-- TOUR: each slide is a stop on the walk. Camera keyframes live in main.js, keyed by slide id. -->
+    <section class="slide hero" id="s-hero" data-name="Welcome" data-word="SIGNIFA" aria-label="Introduction">
       <div class="hero-copy">
-        <p class="eyebrow">Signifa Builders & Developers, Hyderabad</p>
-        <h1><span class="line">Live in</span><span class="line">the light.</span></h1>
-        <p class="hero-sub">Luxury homes planned around sunlight, breeze and Vastu. Drag the house to turn it. Slide the sun to see it from dawn to night.</p>
+        <p class="eyebrow">Signifa Builders &amp; Developers, Hyderabad</p>
+        <h1><span class="line">Walk into</span><span class="line">your home.</span></h1>
+        <p class="hero-sub">Scroll to take the tour. Through the gate, up to the fifth floor, and into every room of a Signifa 3 BHK.</p>
         <div class="hero-actions">
-          <a class="btn" href="#contact">Book a site visit</a>
-          <a class="btn btn-line" href="#projects">See our projects</a>
+          <a class="btn" href="#s-arrive">Start the tour</a>
+          <a class="btn btn-line" href="#contact">Book a site visit</a>
         </div>
       </div>
-
       <div class="sundial" id="sundial">
         <div class="sun-row">
           <label for="sun">Time of day</label>
@@ -92,108 +97,131 @@
         <div class="sun-ends"><span>Sunrise</span><span>Night</span></div>
         <p class="sun-note" id="sunNote" aria-live="polite">Golden hour. Warm light on the west terraces.</p>
       </div>
-
-      <p class="drag-hint" aria-hidden="true"><span class="drag-icon"></span>Drag to turn</p>
+      <p class="drag-hint" aria-hidden="true"><span class="drag-icon"></span>Drag to look around</p>
     </section>
 
-    <!-- 2. RIBBON, near -->
-    <section class="slide" id="s-ribbon" data-name="The roof" data-word="RIBBON" data-cam="96,16,36,2,16,1">
+    <section class="slide" id="s-arrive" data-name="Arrival" data-word="ARRIVE">
       <article class="card card-r">
-        <p class="card-k">The roof</p>
-        <h2>Six white ribbons, one sweep.</h2>
-        <p>Curved fins fall from the top floor over the pool deck. They shade the water through the hottest hours and frame the sky above it.</p>
+        <p class="card-k">The gate</p>
+        <h2>A palm-lined drive home.</h2>
+        <p>A gated entrance with security, CCTV and landscaped gardens on either side of the drive.</p>
       </article>
     </section>
 
-    <!-- 3. POOL, near top-down -->
-    <section class="slide" id="s-pool" data-name="The pool" data-word="AQUA" data-cam="170,64,40,1.5,9.5,1">
+    <section class="slide" id="s-lobby" data-name="Lobby" data-word="LOBBY">
       <article class="card card-l">
-        <p class="card-k">First-floor pool</p>
-        <h2>Water at the heart of the house.</h2>
-        <p>A glass-edged pool lifted one level up, so every swim looks out over the gardens and catches the breeze from both sides.</p>
+        <p class="card-k">Entrance lobby</p>
+        <h2>A glass lobby under a deep canopy.</h2>
+        <p>Drop-off under cover, lifts and intercom, and parking for residents in the stilt level behind.</p>
       </article>
     </section>
 
-    <!-- 4. GARDENS, near side -->
-    <section class="slide" id="s-garden" data-name="Sky gardens" data-word="GARDEN" data-cam="128,10,32,4,15,-9">
+    <section class="slide" id="s-door" data-name="Your door" data-word="WELCOME" data-space="int">
       <article class="card card-r">
-        <p class="card-k">Sky gardens</p>
-        <h2>Green on every level.</h2>
-        <p>Planted terraces wrap the bedrooms, so the garden isn't only on the ground floor. Morning light, evening shade.</p>
+        <p class="card-k">Fifth floor</p>
+        <h2>Your teak front door.</h2>
+        <p>Keep scrolling. The door opens and you step inside.</p>
       </article>
     </section>
 
-    <!-- 5. TOWER, worm's eye -->
-    <section class="slide" id="s-tower" data-name="Structure" data-word="STONE" data-cam="175,-9,36,2,17,-4">
+    <section class="slide" id="s-living" data-name="Living room" data-word="LIVING" data-space="int" data-room="living">
       <article class="card card-l">
-        <p class="card-k">Structure</p>
-        <h2>Built to stand for generations.</h2>
-        <p>A charcoal-stone core anchors the house. Deep overhangs, framed balconies and clean lines, made for the Hyderabad climate.</p>
+        <p class="card-k">Living room</p>
+        <h2>Bright, open and made for family.</h2>
+        <p>Full-width sliding doors open the living room to the balcony. Vitrified tile floors run through the home.</p>
       </article>
     </section>
 
-    <!-- 6. AERIAL, far -->
-    <section class="slide" id="s-aerial" data-name="Approvals" data-word="VASTU" data-cam="75,52,120,0,8,0">
-      <article class="card card-wide">
-        <p class="card-k">Every Signifa home</p>
-        <h2>Approved, registered, aligned.</h2>
-        <ul class="stats">
-          <li><strong><span data-count="100">100</span>%</strong><span>Vastu compliant</span></li>
-          <li><strong>RERA</strong><span>Registered projects</span></li>
-          <li><strong>GHMC</strong><span>Approved plans</span></li>
-        </ul>
+    <section class="slide" id="s-balcony" data-name="Balcony" data-word="VIEW" data-space="int" data-room="balcony">
+      <article class="card card-r">
+        <p class="card-k">Balcony</p>
+        <h2>Evenings with a view.</h2>
+        <p>UPVC sliding doors with mosquito-mesh provision and a glass railing that keeps the view open.</p>
       </article>
     </section>
 
-    <!-- 7-9. PROJECTS, slow far orbit -->
-    <section class="slide proj" id="projects" data-name="Signature" data-word="SIGNATURE" data-cam="10,22,100,0,10,0" aria-labelledby="p1">
-      <article class="card card-l card-proj">
-        <p class="badge badge-live">Ongoing</p>
-        <h2 id="p1">Signifa Signature</h2>
-        <p>One of Hyderabad's largest gated communities at Machabollaram, with first-rate connectivity, modern amenities and an open view every day.</p>
-        <dl class="specs">
-          <div><dt>Location</dt><dd>Machabollaram, near Kompally</dd></div>
-          <div><dt>Homes</dt><dd>2 & 3 BHK luxury flats</dd></div>
-          <div><dt>Units</dt><dd><span data-count="178">178</span> residences</dd></div>
-          <div><dt>Floors</dt><dd>Cellar + Stilt + 8</dd></div>
-          <div><dt>Approvals</dt><dd>GHMC, RERA registered</dd></div>
-        </dl>
-        <a class="link" href="https://signifadevelopers.com/signifa-signature.html" target="_blank" rel="noopener">View project details</a>
+    <section class="slide" id="s-dining" data-name="Dining &amp; kitchen" data-word="DINE" data-space="int" data-room="kitchen">
+      <article class="card card-l">
+        <p class="card-k">Dining and kitchen</p>
+        <h2>Cook, talk, eat together.</h2>
+        <p>A granite platform with a steel sink, ceramic dado above the counter, and points for a water purifier and washing machine.</p>
       </article>
     </section>
 
-    <section class="slide proj" id="s-skyline" data-name="Skyline" data-word="SKYLINE" data-cam="140,30,86,0,11,0" aria-labelledby="p2">
-      <article class="card card-r card-proj">
-        <p class="badge badge-live">Ongoing</p>
-        <h2 id="p2">Signifa Skyline</h2>
-        <p>Contemporary design with timeless elegance. Spacious 3 BHK residences with modern amenities, security and connectivity in one of the city's fastest-growing areas.</p>
-        <dl class="specs">
-          <div><dt>Location</dt><dd>Near Suchitra, Hyderabad</dd></div>
-          <div><dt>Homes</dt><dd>3 BHK luxury flats</dd></div>
-          <div><dt>Vastu</dt><dd>100% compliant</dd></div>
-          <div><dt>Approvals</dt><dd>RERA registered</dd></div>
-        </dl>
-        <a class="link" href="https://signifadevelopers.com/signifa-skyline.html" target="_blank" rel="noopener">View project details</a>
+    <section class="slide" id="s-master" data-name="Master bedroom" data-word="REST" data-space="int" data-room="master">
+      <article class="card card-r">
+        <p class="card-k">Master bedroom</p>
+        <h2>Your own quiet corner.</h2>
+        <p>A large window, an AC point, a walk-in wardrobe and an attached bathroom with anti-skid flooring.</p>
       </article>
     </section>
 
-    <section class="slide proj" id="s-springs" data-name="Springs" data-word="SPRINGS" data-cam="250,10,74,0,12,0" aria-labelledby="p3">
-      <article class="card card-l card-proj">
-        <p class="badge">Completed</p>
-        <h2 id="p3">Signifa Springs</h2>
-        <p>Delivered and lived in. Families who chose Signifa early now call Springs home.</p>
-        <a class="link" href="https://signifadevelopers.com/projectpages/springs/index.html" target="_blank" rel="noopener">See Signifa Springs</a>
+    <section class="slide" id="s-bed2" data-name="Bedroom 2" data-word="DREAM" data-space="int" data-room="bed2">
+      <article class="card card-l">
+        <p class="card-k">Second bedroom</p>
+        <h2>Room for the children to grow.</h2>
+        <p>Windows on two sides for cross-ventilation, with its own bathroom next door.</p>
       </article>
     </section>
 
-    <!-- SOLID SHEET -->
+    <section class="slide" id="s-bed3" data-name="Bedroom 3" data-word="STUDY" data-space="int" data-room="bed3">
+      <article class="card card-r">
+        <p class="card-k">Third bedroom</p>
+        <h2>Guest room, study or both.</h2>
+        <p>A flexible room beside the dining area, close to the common bathroom.</p>
+      </article>
+    </section>
+
     <div class="sheet">
-      <section class="walk" aria-labelledby="walkTitle">
-        <div class="walk-copy">
-          <h2 id="walkTitle">Walk through it.</h2>
-          <p>A short fly-around of the villa, recorded from our design studio.</p>
+      <section class="projects-sec" id="projects" aria-labelledby="projTitle">
+        <h2 id="projTitle">Our projects.</h2>
+        <p class="sec-sub">The home you just walked through is a representative 3 BHK. Every layout below is RERA registered.</p>
+        <div class="proj-grid">
+          <article class="proj-card">
+            <p class="badge badge-live">Ongoing</p>
+            <h3>Signifa Signature</h3>
+            <p>One of Hyderabad's largest gated communities, at Machabollaram near Kompally.</p>
+            <dl class="specs">
+              <div><dt>Homes</dt><dd>2 &amp; 3 BHK luxury flats</dd></div>
+              <div><dt>Units</dt><dd><span data-count="178">178</span> residences</dd></div>
+              <div><dt>Approvals</dt><dd>GHMC, RERA registered</dd></div>
+            </dl>
+            <a class="link" href="https://signifadevelopers.com/signifa-signature.html" target="_blank" rel="noopener">View project details</a>
+          </article>
+          <article class="proj-card">
+            <p class="badge badge-live">Ongoing</p>
+            <h3>Signifa Skyline</h3>
+            <p>Spacious 3 BHK residences near Suchitra, in one of the city's fastest-growing areas.</p>
+            <dl class="specs">
+              <div><dt>Homes</dt><dd>3 BHK luxury flats</dd></div>
+              <div><dt>Vastu</dt><dd><span data-count="100">100</span>% compliant</dd></div>
+              <div><dt>Approvals</dt><dd>RERA registered</dd></div>
+            </dl>
+            <a class="link" href="https://signifadevelopers.com/signifa-skyline.html" target="_blank" rel="noopener">View project details</a>
+          </article>
+          <article class="proj-card">
+            <p class="badge">Completed</p>
+            <h3>Signifa Springs</h3>
+            <p>Delivered and lived in. Families who chose Signifa early now call Springs home.</p>
+            <a class="link" href="https://signifadevelopers.com/projectpages/springs/index.html" target="_blank" rel="noopener">See Signifa Springs</a>
+          </article>
         </div>
-        <video class="walk-video" src="assets/walkthrough.mp4" poster="assets/walkthrough-poster.jpg" muted loop playsinline controls preload="none"></video>
+      </section>
+
+      <section class="amen" aria-labelledby="amenTitle">
+        <h2 id="amenTitle">Life around your home.</h2>
+        <ul class="amen-list">
+          <li>Club house</li><li>Swimming pool</li><li>Kids pool</li><li>Kids play area</li>
+          <li>Modern gym</li><li>Jogging track</li><li>Badminton court</li><li>Multi-purpose hall</li>
+          <li>Yoga and aerobics</li><li>Table tennis</li><li>Landscaped parks</li><li>Elders' seating</li>
+          <li>Power backup</li><li>CCTV and security</li><li>EV charging</li><li>Rainwater harvesting</li>
+        </ul>
+        <div class="spec-grid">
+          <div><h3>Flooring</h3><p>Vitrified tiles throughout. Ceramic tiles in utility areas, anti-skid in bathrooms.</p></div>
+          <div><h3>Kitchen</h3><p>Granite platform, steel sink, 2 ft ceramic dado over the platform.</p></div>
+          <div><h3>Doors and windows</h3><p>Teak main door, sal wood internal doors, UPVC sliding balcony doors.</p></div>
+          <div><h3>Electrical</h3><p>Copper wiring, AC point in the master bedroom, purifier and washer points.</p></div>
+        </div>
       </section>
 
       <section class="values" id="values">
