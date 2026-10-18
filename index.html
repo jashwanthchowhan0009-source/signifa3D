@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signifa Builders & Developers, Hyderabad</title>
+  <meta name="description" content="Signifa Builders & Developers, Hyderabad. RERA-registered, Vastu-compliant luxury homes at Machabollaram and Suchitra. Explore a Signifa villa in 3D.">
+  <meta name="theme-color" content="#6FA3D8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Syne:wght@700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body data-light="day">
+  <a class="skip" href="#projects">Skip to projects</a>
+
+  <!-- Layer 0: live sky + giant word that sits behind the house -->
+  <div class="sky" id="sky" aria-hidden="true">
+    <svg class="clouds" preserveAspectRatio="none" aria-hidden="true">
+      <filter id="cloudf" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.0035 0.009" numOctaves="5" seed="11"/>
+        <feColorMatrix values="0 0 0 0 1  0 0 0 0 .97  0 0 0 0 .94  0 0 0 2.3 -1.15"/>
+        <feGaussianBlur stdDeviation="1.2"/>
+      </filter>
+      <rect width="100%" height="100%" filter="url(#cloudf)"/>
+    </svg>
+  </div>
+  <svg class="swoosh" viewBox="0 0 200 1000" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 0 H70 C 10 220, 160 430, 90 640 C 60 760, 120 900, 150 1000 H0 Z" fill="#FFFDF8"/>
+    <path d="M70 0 C 10 220, 160 430, 90 640 C 60 760, 120 900, 150 1000" fill="none" stroke="url(#gold)" stroke-width="3"/>
+    <defs><linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9CE8E"/><stop offset=".5" stop-color="#B8893F"/><stop offset="1" stop-color="#E9CE8E"/></linearGradient></defs>
+  </svg>
+  <div class="word" id="word" aria-hidden="true"><span id="wordText">SIGNIFA</span></div>
+
+  <!-- Layer 1: the house -->
+  <canvas id="scene" aria-label="Interactive 3D villa. Drag to turn it."></canvas>
+  <div class="loader" id="loader" role="status">
+    <span class="loader-num" id="loaderNum">0</span>
+    <span class="loader-txt" id="loaderText">Building the villa</span>
+  </div>
+
+  <!-- Layer 2: interface -->
+  <header class="nav" id="nav">
+    <a class="brand" href="#top" aria-label="Signifa home">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M5 35V15L20 5l15 10v20" fill="none" stroke="currentColor" stroke-width="3"/><path d="M14 35V22h12v13" fill="none" stroke="currentColor" stroke-width="3"/></svg>
+      <span>Signifa</span>
+    </a>
+    <nav aria-label="Main">
+      <a href="#s-ribbon">The villa</a>
+      <a href="#projects">Projects</a>
+      <a href="#values">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <a class="btn btn-sm" href="#contact">Book a site visit</a>
+  </header>
+
+  <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+  <ol class="pager" id="pager" aria-label="Slides"></ol>
+  <p class="counter" id="counter" aria-live="polite"><span id="counterNum">01</span><span class="counter-of"> / <span id="counterTotal">09</span></span><span class="counter-name" id="counterName">Welcome</span></p>
+  <div class="hotspots" id="hotspots"></div>
+
+  <main id="top">
+    <!-- 1. HERO, far -->
+    <section class="slide hero" id="s-hero" data-name="Welcome" data-word="SIGNIFA" data-cam="118,13,92,0,11,0" aria-label="Introduction">
+      <div class="hero-copy">
+        <p class="eyebrow">Signifa Builders & Developers, Hyderabad</p>
+        <h1><span class="line">Live in</span><span class="line">the light.</span></h1>
+        <p class="hero-sub">Luxury homes planned around sunlight, breeze and Vastu. Drag the house to turn it. Slide the sun to see it from dawn to night.</p>
+        <div class="hero-actions">
+          <a class="btn" href="#contact">Book a site visit</a>
+          <a class="btn btn-line" href="#projects">See our projects</a>
+        </div>
+      </div>
+
+      <div class="sundial" id="sundial">
+        <div class="sun-row">
+          <label for="sun">Time of day</label>
+          <output id="sunOut">4:55 pm</output>
+        </div>
+        <div class="sun-track">
+          <svg class="sun-arc" viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><path d="M2 58 Q150 -40 298 58" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 6" stroke-linecap="round"/></svg>
+          <input type="range" id="sun" min="6" max="21" step="0.05" value="16.9" aria-valuetext="4:55 pm">
+        </div>
+        <div class="sun-ends"><span>Sunrise</span><span>Night</span></div>
+        <p class="sun-note" id="sunNote" aria-live="polite">Golden hour. Warm light on the west terraces.</p>
+      </div>
+
+      <p class="drag-hint" aria-hidden="true"><span class="drag-icon"></span>Drag to turn</p>
+    </section>
+
+    <!-- 2. RIBBON, near -->
+    <section class="slide" id="s-ribbon" data-name="The roof" data-word="RIBBON" data-cam="96,16,36,2,16,1">
+      <article class="card card-r">
+        <p class="card-k">The roof</p>
+        <h2>Six white ribbons, one sweep.</h2>
+        <p>Curved fins fall from the top floor over the pool deck. They shade the water through the hottest hours and frame the sky above it.</p>
+      </article>
+    </section>
+
+    <!-- 3. POOL, near top-down -->
+    <section class="slide" id="s-pool" data-name="The pool" data-word="AQUA" data-cam="170,64,40,1.5,9.5,1">
+      <article class="card card-l">
+        <p class="card-k">First-floor pool</p>
+        <h2>Water at the heart of the house.</h2>
+        <p>A glass-edged pool lifted one level up, so every swim looks out over the gardens and catches the breeze from both sides.</p>
+      </article>
+    </section>
+
+    <!-- 4. GARDENS, near side -->
+    <section class="slide" id="s-garden" data-name="Sky gardens" data-word="GARDEN" data-cam="128,10,32,4,15,-9">
+      <article class="card card-r">
+        <p class="card-k">Sky gardens</p>
+        <h2>Green on every level.</h2>
+        <p>Planted terraces wrap the bedrooms, so the garden isn't only on the ground floor. Morning light, evening shade.</p>
+      </article>
+    </section>
+
+    <!-- 5. TOWER, worm's eye -->
+    <section class="slide" id="s-tower" data-name="Structure" data-word="STONE" data-cam="175,-9,36,2,17,-4">
+      <article class="card card-l">
+        <p class="card-k">Structure</p>
+        <h2>Built to stand for generations.</h2>
+        <p>A charcoal-stone core anchors the house. Deep overhangs, framed balconies and clean lines, made for the Hyderabad climate.</p>
+      </article>
+    </section>
+
+    <!-- 6. AERIAL, far -->
+    <section class="slide" id="s-aerial" data-name="Approvals" data-word="VASTU" data-cam="75,52,120,0,8,0">
+      <article class="card card-wide">
+        <p class="card-k">Every Signifa home</p>
+        <h2>Approved, registered, aligned.</h2>
+        <ul class="stats">
+          <li><strong><span data-count="100">100</span>%</strong><span>Vastu compliant</span></li>
+          <li><strong>RERA</strong><span>Registered projects</span></li>
+          <li><strong>GHMC</strong><span>Approved plans</span></li>
+        </ul>
+      </article>
+    </section>
+
+    <!-- 7-9. PROJECTS, slow far orbit -->
+    <section class="slide proj" id="projects" data-name="Signature" data-word="SIGNATURE" data-cam="10,22,100,0,10,0" aria-labelledby="p1">
+      <article class="card card-l card-proj">
+        <p class="badge badge-live">Ongoing</p>
+        <h2 id="p1">Signifa Signature</h2>
+        <p>One of Hyderabad's largest gated communities at Machabollaram, with first-rate connectivity, modern amenities and an open view every day.</p>
+        <dl class="specs">
+          <div><dt>Location</dt><dd>Machabollaram, near Kompally</dd></div>
+          <div><dt>Homes</dt><dd>2 & 3 BHK luxury flats</dd></div>
+          <div><dt>Units</dt><dd><span data-count="178">178</span> residences</dd></div>
+          <div><dt>Floors</dt><dd>Cellar + Stilt + 8</dd></div>
+          <div><dt>Approvals</dt><dd>GHMC, RERA registered</dd></div>
+        </dl>
+        <a class="link" href="https://signifadevelopers.com/signifa-signature.html" target="_blank" rel="noopener">View project details</a>
+      </article>
+    </section>
+
+    <section class="slide proj" id="s-skyline" data-name="Skyline" data-word="SKYLINE" data-cam="140,30,86,0,11,0" aria-labelledby="p2">
+      <article class="card card-r card-proj">
+        <p class="badge badge-live">Ongoing</p>
+        <h2 id="p2">Signifa Skyline</h2>
+        <p>Contemporary design with timeless elegance. Spacious 3 BHK residences with modern amenities, security and connectivity in one of the city's fastest-growing areas.</p>
+        <dl class="specs">
+          <div><dt>Location</dt><dd>Near Suchitra, Hyderabad</dd></div>
+          <div><dt>Homes</dt><dd>3 BHK luxury flats</dd></div>
+          <div><dt>Vastu</dt><dd>100% compliant</dd></div>
+          <div><dt>Approvals</dt><dd>RERA registered</dd></div>
+        </dl>
+        <a class="link" href="https://signifadevelopers.com/signifa-skyline.html" target="_blank" rel="noopener">View project details</a>
+      </article>
+    </section>
+
+    <section class="slide proj" id="s-springs" data-name="Springs" data-word="SPRINGS" data-cam="250,10,74,0,12,0" aria-labelledby="p3">
+      <article class="card card-l card-proj">
+        <p class="badge">Completed</p>
+        <h2 id="p3">Signifa Springs</h2>
+        <p>Delivered and lived in. Families who chose Signifa early now call Springs home.</p>
+        <a class="link" href="https://signifadevelopers.com/projectpages/springs/index.html" target="_blank" rel="noopener">See Signifa Springs</a>
+      </article>
+    </section>
+
+    <!-- SOLID SHEET -->
+    <div class="sheet">
+      <section class="walk" aria-labelledby="walkTitle">
+        <div class="walk-copy">
+          <h2 id="walkTitle">Walk through it.</h2>
+          <p>A short fly-around of the villa, recorded from our design studio.</p>
+        </div>
+        <video class="walk-video" src="assets/walkthrough.mp4" poster="assets/walkthrough-poster.jpg" muted loop playsinline controls preload="none"></video>
+      </section>
+
+      <section class="values" id="values">
+        <h2>We build on four things.</h2>
+        <div class="values-grid">
+          <div><h3>Integrity</h3><p>Honest pricing, clear paperwork and transparent progress for every buyer, partner and employee.</p></div>
+          <div><h3>Quality</h3><p>High standards from the first drawing to the last tile, so your home holds its value for decades.</p></div>
+          <div><h3>Collaboration</h3><p>We work closely with you, our engineers and partners to solve problems before they reach your home.</p></div>
+          <div><h3>You first</h3><p>Plans shaped around how your family lives, and support that continues after handover.</p></div>
+        </div>
+      </section>
+
+
+      <section class="why" aria-labelledby="whyTitle">
+        <h2 id="whyTitle">Why families choose Signifa.</h2>
+        <div class="why-grid">
+          <article><h3>Expertise</h3><p>Deep knowledge of the Hyderabad market, so every plan delivers real function and real value.</p></article>
+          <article><h3>Customisation</h3><p>Every family is different. We shape layouts and finishes around how you actually live.</p></article>
+          <article><h3>Reliability</h3><p>A track record of delivering quality homes on schedule, and keeping our word.</p></article>
+          <article><h3>End-to-end service</h3><p>Design, construction and post-handover support, all with one team.</p></article>
+        </div>
+      </section>
+
+      <section class="emi" id="emi" aria-labelledby="emiTitle">
+        <div class="emi-copy">
+          <h2 id="emiTitle">Plan your EMI.</h2>
+          <p>Move the sliders to see an indicative monthly payment for your home loan.</p>
+        </div>
+        <form class="emi-calc" id="emiCalc" onsubmit="return false">
+          <label><span>Loan amount <output id="emiAmtOut">₹75,00,000</output></span>
+            <input type="range" id="emiAmt" min="1000000" max="30000000" step="100000" value="7500000"></label>
+          <label><span>Interest rate <output id="emiRateOut">8.5%</output></span>
+            <input type="range" id="emiRate" min="6" max="13" step="0.05" value="8.5"></label>
+          <label><span>Tenure <output id="emiYrsOut">20 years</output></span>
+            <input type="range" id="emiYrs" min="5" max="30" step="1" value="20"></label>
+          <div class="emi-result">
+            <p>Monthly EMI</p>
+            <strong id="emiOut">₹65,087</strong>
+            <div class="emi-bar" aria-hidden="true"><i id="emiBarP"></i></div>
+            <p class="emi-split"><span><b class="dot dot-p"></b>Principal <em id="emiP">₹75,00,000</em></span><span><b class="dot dot-i"></b>Interest <em id="emiI">₹81,20,800</em></span></p>
+          </div>
+          <p class="emi-note">Indicative only. Your bank's rate and terms decide the final EMI.</p>
+        </form>
+      </section>
+
+      <section class="voices" aria-labelledby="voicesTitle">
+        <h2 id="voicesTitle" class="sr">What homeowners say</h2>
+        <figure>
+          <blockquote>Signifa turned our vision into a stunning reality. Their attention to detail made building our home a truly enjoyable experience.</blockquote>
+          <figcaption>Venkat Rao, businessman</figcaption>
+        </figure>
+        <figure>
+          <blockquote>They delivered on time and the quality of the work is outstanding. We couldn't be happier with our new home.</blockquote>
+          <figcaption>Virat Chouhan, businessman</figcaption>
+        </figure>
+      </section>
+
+      <section class="contact" id="contact">
+        <div class="contact-info">
+          <h2>Come see it in person.</h2>
+          <p>Tell us when suits you and we'll arrange your site visit.</p>
+          <address>
+            <a href="https://maps.app.goo.gl/S7fAhkzw1721bHoq8" target="_blank" rel="noopener">197/A, 157/A, Machabollaram Village, near Kompally, Alwal Mandal, Medchal Malkajgiri Dist., Hyderabad 500010</a>
+            <a href="tel:+918019452299">+91 80194 52299</a>
+            <a href="tel:+918019462299">+91 80194 62299</a>
+            <a href="mailto:signifasignature@gmail.com">signifasignature@gmail.com</a>
+          </address>
+        </div>
+        <form class="visit" id="visitForm">
+          <label>Your name<input name="name" required autocomplete="name"></label>
+          <label>Phone<input name="phone" type="tel" required autocomplete="tel" inputmode="tel"></label>
+          <label>Interested in
+            <select name="project">
+              <option>Signifa Signature</option>
+              <option>Signifa Skyline</option>
+              <option>Not sure yet</option>
+            </select>
+          </label>
+          <label>Preferred date<input name="date" type="date"></label>
+          <button class="btn btn-sun" type="submit">Book a site visit on WhatsApp</button>
+          <p class="form-note">Opens WhatsApp with your details filled in.</p>
+        </form>
+      </section>
+
+      <footer class="foot">
+        <p class="foot-mark">Signifa</p>
+        <div class="foot-row">
+          <p>© 2026 Signifa Builders & Developers</p>
+          <nav aria-label="Social">
+            <a href="https://www.instagram.com/signifabuildersanddevelopers/" target="_blank" rel="noopener">Instagram</a>
+            <a href="https://www.facebook.com/signifabuildersanddevelopers" target="_blank" rel="noopener">Facebook</a>
+            <a href="https://www.youtube.com/@signifabuidersdevelopers" target="_blank" rel="noopener">YouTube</a>
+            <a href="https://x.com/SignifaBuilders" target="_blank" rel="noopener">X</a>
+            <a href="https://www.linkedin.com/in/signifa-builders-and-developers-63b274270/" target="_blank" rel="noopener">LinkedIn</a>
+          </nav>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <aside class="rail" aria-label="Quick contact">
+    <a href="tel:+918019452299"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 5a2 2 0 0 1 2-2Z"/></svg><span>Call</span></a>
+    <a href="https://api.whatsapp.com/send?phone=918019452299&text=Hello%2C%20I%27m%20looking%20to%20buy%20a%20flat.%20Could%20you%20share%20details%20of%20your%20ongoing%20projects%3F" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M4 20l1.3-4A8.5 8.5 0 1 1 8 18.8L4 20Z"/></svg><span>WhatsApp</span></a>
+    <a href="#contact"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M3 6h18v12H3zM3 7l9 6 9-6"/></svg><span>Contact</span></a>
+  </aside>
+
+  <script type="module" src="main.js"></script>
+  <script type="module" src="interactions.js"></script>
+</body>
+</html>
