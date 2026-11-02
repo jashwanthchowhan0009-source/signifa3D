@@ -54,7 +54,7 @@
       <span>Signifa</span>
     </a>
     <nav aria-label="Main">
-      <a href="#s-arrive">The tour</a>
+      <a href="#s-road">The tour</a>
       <a href="#projects">Projects</a>
       <a href="#values">About</a>
       <a href="#contact">Contact</a>
@@ -69,7 +69,8 @@
   <p class="room-tag" id="roomTag" aria-hidden="true"><b></b><span></span></p>
   <figure class="plan" id="plan" aria-label="Floor plan of the 3 BHK home">
     <svg id="planSvg" viewBox="-0.6 -0.6 16.2 13.2"></svg>
-    <figcaption>Representative 3 BHK, approx. 1,900 sq ft</figcaption>
+    <div class="unit-switch" role="group" aria-label="Home type"><button type="button" data-unit="3" aria-pressed="true">3 BHK</button><button type="button" data-unit="2" aria-pressed="false">2 BHK + Study</button></div>
+    <figcaption id="planCap"></figcaption>
   </figure>
 
   <main id="top">
@@ -77,11 +78,11 @@
     <!-- TOUR: each slide is a stop on the walk. Camera keyframes live in main.js, keyed by slide id. -->
     <section class="slide hero" id="s-hero" data-name="Welcome" data-word="SIGNIFA" aria-label="Introduction">
       <div class="hero-copy">
-        <p class="eyebrow">Signifa Builders &amp; Developers, Hyderabad</p>
+        <p class="eyebrow">Signifa Signature, Machabollaram, Hyderabad</p>
         <h1><span class="line">Walk into</span><span class="line">your home.</span></h1>
-        <p class="hero-sub">Scroll to take the tour. Through the gate, up to the fifth floor, and into every room of a Signifa 3 BHK.</p>
+        <p class="hero-sub">Scroll to take the tour. In from the 60 ft road, past the pool, EV chargers and jogging track, and into a Signifa 2 or 3 BHK.</p>
         <div class="hero-actions">
-          <a class="btn" href="#s-arrive">Start the tour</a>
+          <a class="btn" href="#s-road">Start the tour</a>
           <a class="btn btn-line" href="#contact">Book a site visit</a>
         </div>
       </div>
@@ -100,19 +101,67 @@
       <p class="drag-hint" aria-hidden="true"><span class="drag-icon"></span>Drag to look around</p>
     </section>
 
-    <section class="slide" id="s-arrive" data-name="Arrival" data-word="ARRIVE">
+    <section class="slide" id="s-road" data-name="The road" data-word="ARRIVE">
+      <article class="card card-l">
+        <p class="card-k">Machabollaram, near Kompally</p>
+        <h2>Turn in off the 60 ft road.</h2>
+        <p>A gated community of 178 homes in one C+S+8 tower, with a clear title and more than 20 amenities.</p>
+      </article>
+    </section>
+
+    <section class="slide" id="s-gate" data-name="Entrance" data-word="ENTER">
       <article class="card card-r">
-        <p class="card-k">The gate</p>
-        <h2>A palm-lined drive home.</h2>
-        <p>A gated entrance with security, CCTV and landscaped gardens on either side of the drive.</p>
+        <p class="card-k">Entry and drive way</p>
+        <h2>Through the gate, past the water body.</h2>
+        <p>24/7 security and CCTV at the gate, and a palm-lined drive way to every corner of the site.</p>
+      </article>
+    </section>
+
+    <section class="slide" id="s-pool" data-name="Swimming pool" data-word="SPLASH">
+      <article class="card card-l">
+        <p class="card-k">Swimming pool</p>
+        <h2>A pool for you, and one for the kids.</h2>
+        <p>Main pool, kids pool, sun loungers and dress changing rooms, right inside the gate.</p>
+      </article>
+    </section>
+
+    <section class="slide" id="s-ev" data-name="EV charging" data-word="CHARGE">
+      <article class="card card-r">
+        <p class="card-k">EV charging point</p>
+        <h2>Plug in under cover.</h2>
+        <p>Covered EV charging bays on the drive way, and covered car parking for every home in the stilt.</p>
+      </article>
+    </section>
+
+    <section class="slide" id="s-jog" data-name="Jogging track" data-word="STRIDE">
+      <article class="card card-l">
+        <p class="card-k">Walking and jogging track</p>
+        <h2>A loop around the whole community.</h2>
+        <p>Morning runs and evening walks on a track that circles the tower, the gardens and the play areas.</p>
+      </article>
+    </section>
+
+    <section class="slide" id="s-play" data-name="Play and courts" data-word="PLAY">
+      <article class="card card-r">
+        <p class="card-k">Kids play area and courts</p>
+        <h2>Room to play, right downstairs.</h2>
+        <p>Kids play area, shuttle court, half basketball court and a cricket practice net.</p>
+      </article>
+    </section>
+
+    <section class="slide" id="s-club" data-name="Club house" data-word="UNWIND">
+      <article class="card card-l">
+        <p class="card-k">Club house</p>
+        <h2>Gym, games and a quiet corner.</h2>
+        <p>Indoor gym, indoor games, yoga and meditation hall, working pods and guest rooms, with gazebos and a senior citizen lounge outside.</p>
       </article>
     </section>
 
     <section class="slide" id="s-lobby" data-name="Lobby" data-word="LOBBY">
-      <article class="card card-l">
-        <p class="card-k">Entrance lobby</p>
-        <h2>A glass lobby under a deep canopy.</h2>
-        <p>Drop-off under cover, lifts and intercom, and parking for residents in the stilt level behind.</p>
+      <article class="card card-r">
+        <p class="card-k">Residents lobby</p>
+        <h2>Home is a lift ride away.</h2>
+        <p>Drop-off under the canopy, KONE lifts, intercom to security and 1 kVA power backup for every flat.</p>
       </article>
     </section>
 
@@ -120,7 +169,8 @@
       <article class="card card-r">
         <p class="card-k">Fifth floor</p>
         <h2>Your teak front door.</h2>
-        <p>Keep scrolling. The door opens and you step inside.</p>
+        <p>Pick a home, then keep scrolling. The door opens and you step inside.</p>
+        <div class="unit-switch" role="group" aria-label="Home type"><button type="button" data-unit="3" aria-pressed="true">3 BHK</button><button type="button" data-unit="2" aria-pressed="false">2 BHK + Study</button></div>
       </article>
     </section>
 
@@ -182,9 +232,9 @@
             <h3>Signifa Signature</h3>
             <p>One of Hyderabad's largest gated communities, at Machabollaram near Kompally.</p>
             <dl class="specs">
-              <div><dt>Homes</dt><dd>2 &amp; 3 BHK luxury flats</dd></div>
-              <div><dt>Units</dt><dd><span data-count="178">178</span> residences</dd></div>
-              <div><dt>Approvals</dt><dd>GHMC, RERA registered</dd></div>
+              <div><dt>Homes</dt><dd>2, 2.5 and 3 BHK, 1,060 to 2,175 sft</dd></div>
+              <div><dt>Units</dt><dd><span data-count="178">178</span> homes, 23 per floor</dd></div>
+              <div><dt>Floors</dt><dd>Cellar + Stilt + 8</dd></div>
             </dl>
             <a class="link" href="https://signifadevelopers.com/signifa-signature.html" target="_blank" rel="noopener">View project details</a>
           </article>
@@ -209,19 +259,27 @@
       </section>
 
       <section class="amen" aria-labelledby="amenTitle">
-        <h2 id="amenTitle">Life around your home.</h2>
-        <ul class="amen-list">
-          <li>Club house</li><li>Swimming pool</li><li>Kids pool</li><li>Kids play area</li>
-          <li>Modern gym</li><li>Jogging track</li><li>Badminton court</li><li>Multi-purpose hall</li>
-          <li>Yoga and aerobics</li><li>Table tennis</li><li>Landscaped parks</li><li>Elders' seating</li>
-          <li>Power backup</li><li>CCTV and security</li><li>EV charging</li><li>Rainwater harvesting</li>
-        </ul>
+        <h2 id="amenTitle">20+ amenities.</h2>
+        <ul class="amen-list"><li>Swimming pool</li><li>Kids pool</li><li>Dress changing rooms</li><li>Water body</li><li>Walking and jogging track</li><li>EV charging point</li><li>Club house</li><li>Indoor gym</li><li>Indoor games</li><li>Indoor multipurpose hall</li><li>Yoga and meditation hall</li><li>Working pods</li><li>Guest rooms</li><li>Kids play area</li><li>Shuttle court</li><li>Half basketball court</li><li>Cricket practice net</li><li>Gazebos</li><li>Landscape garden</li><li>Park</li><li>Senior citizen lounge</li><li>STP</li></ul>
+        <h3 class="sub-h">Project highlights</h3>
+        <ul class="amen-list hl"><li>100% Vaastu</li><li>No common walls</li><li>Earthquake resistant</li><li>Premium quality construction</li><li>Excellent ventilation</li><li>24/7 security</li><li>CCTV surveillance</li><li>Fire protection system</li><li>Intercom facility</li><li>Covered car parking</li><li>24/7 generator, 1 kVA per flat</li><li>Rainwater harvesting</li></ul>
         <div class="spec-grid">
-          <div><h3>Flooring</h3><p>Vitrified tiles throughout. Ceramic tiles in utility areas, anti-skid in bathrooms.</p></div>
-          <div><h3>Kitchen</h3><p>Granite platform, steel sink, 2 ft ceramic dado over the platform.</p></div>
-          <div><h3>Doors and windows</h3><p>Teak main door, sal wood internal doors, UPVC sliding balcony doors.</p></div>
-          <div><h3>Electrical</h3><p>Copper wiring, AC point in the master bedroom, purifier and washer points.</p></div>
+          <div><h3>Structure</h3><p>RCC framed structure. Red brick or cement solid block walls.</p></div>
+          <div><h3>Flooring</h3><p>Vitrified tiles for the entire flat, ceramic tiles for utility, anti-skid tiles in toilets.</p></div>
+          <div><h3>Doors and windows</h3><p>Teak main door, sal wood internal doors, 3-track UPVC sliding windows with mosquito mesh.</p></div>
+          <div><h3>Kitchen and bath</h3><p>Granite platform with steel sink. Jaquar or equivalent fittings and sanitary ware.</p></div>
+          <div><h3>Electrical</h3><p>Havells or equivalent copper wiring, AC point in the master bedroom, aqua guard and washing machine points.</p></div>
+          <div><h3>Painting</h3><p>Asian Paints or equivalent emulsion outside, smooth putty finish with emulsion inside.</p></div>
+          <div><h3>Lifts and power</h3><p>KONE or equivalent lifts. Generator backup for lifts, motors and common areas.</p></div>
+          <div><h3>Water</h3><p>Borewell and municipal water supply, STP and rainwater harvesting.</p></div>
         </div>
+      </section>
+
+      <section class="area" aria-labelledby="areaTitle">
+        <h2 id="areaTitle">Typical floor, 23 homes.</h2>
+        <p class="sec-sub">Super built-up area in sft, from the Signifa Signature area statement.</p>
+        <div class="filters" role="group" aria-label="Filter by type"><button type="button" data-filter="all" aria-pressed="true">All</button><button type="button" data-filter="2BHK" aria-pressed="false">2 BHK</button><button type="button" data-filter="2.5BHK" aria-pressed="false">2.5 BHK</button><button type="button" data-filter="3BHK" aria-pressed="false">3 BHK</button></div>
+        <div class="area-grid" id="areaGrid"></div>
       </section>
 
       <section class="values" id="values">
@@ -243,28 +301,6 @@
           <article><h3>Reliability</h3><p>A track record of delivering quality homes on schedule, and keeping our word.</p></article>
           <article><h3>End-to-end service</h3><p>Design, construction and post-handover support, all with one team.</p></article>
         </div>
-      </section>
-
-      <section class="emi" id="emi" aria-labelledby="emiTitle">
-        <div class="emi-copy">
-          <h2 id="emiTitle">Plan your EMI.</h2>
-          <p>Move the sliders to see an indicative monthly payment for your home loan.</p>
-        </div>
-        <form class="emi-calc" id="emiCalc" onsubmit="return false">
-          <label><span>Loan amount <output id="emiAmtOut">₹75,00,000</output></span>
-            <input type="range" id="emiAmt" min="1000000" max="30000000" step="100000" value="7500000"></label>
-          <label><span>Interest rate <output id="emiRateOut">8.5%</output></span>
-            <input type="range" id="emiRate" min="6" max="13" step="0.05" value="8.5"></label>
-          <label><span>Tenure <output id="emiYrsOut">20 years</output></span>
-            <input type="range" id="emiYrs" min="5" max="30" step="1" value="20"></label>
-          <div class="emi-result">
-            <p>Monthly EMI</p>
-            <strong id="emiOut">₹65,087</strong>
-            <div class="emi-bar" aria-hidden="true"><i id="emiBarP"></i></div>
-            <p class="emi-split"><span><b class="dot dot-p"></b>Principal <em id="emiP">₹75,00,000</em></span><span><b class="dot dot-i"></b>Interest <em id="emiI">₹81,20,800</em></span></p>
-          </div>
-          <p class="emi-note">Indicative only. Your bank's rate and terms decide the final EMI.</p>
-        </form>
       </section>
 
       <section class="voices" aria-labelledby="voicesTitle">

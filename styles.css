@@ -435,3 +435,20 @@ body[data-light="night"] .room-tag, body[data-light="night"] .plan { background:
   .plan { width: 46vw; bottom: auto; top: 76px; left: auto; right: var(--gutter); }
   .room-tag b { font-size: 1.1rem; }
 }
+
+/* ================= v3: unit switch, highlights, area grid ================= */
+.unit-switch { display: flex; gap: 6px; margin: 4px 0 8px; }
+.card .unit-switch { margin-top: 18px; }
+.unit-switch button, .filters button { flex: 1; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--bronze); background: transparent; color: var(--bronze); font: 700 .82rem var(--sans); cursor: pointer; transition: background-color .2s, color .2s; }
+.unit-switch button[aria-pressed="true"], .filters button[aria-pressed="true"] { background: var(--bronze); color: #fff; }
+.sub-h { margin-top: 48px; font-size: 1.6rem; color: var(--bronze); }
+.amen-list.hl { margin-top: 18px; }
+.amen-list.hl li { background: var(--bronze); color: #fff; box-shadow: none; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; max-width: 520px; }
+.area-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 22px; }
+.flat { display: grid; gap: 2px; padding: 14px 16px; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 1px rgba(139,90,43,.2); font-variant-numeric: tabular-nums; animation: noteIn .5s var(--ease); }
+.flat b { font: 800 1.35rem/1 "Syne", sans-serif; }
+.flat span { font-weight: 700; color: var(--bronze); }
+.flat strong { font-size: 1.05rem; }
+.flat strong::after { content: " sft"; font-weight: 500; font-size: .85rem; color: var(--espresso-soft); }
+.flat em { font-style: normal; font-size: .85rem; color: var(--espresso-soft); }

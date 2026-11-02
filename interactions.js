@@ -88,23 +88,16 @@ if (fine && !reduceMotion) {
   });
 }
 
-/* ---------- EMI calculator ---------- */
-const inr = (v) => '₹' + Math.round(v).toLocaleString('en-IN');
-const amt = document.getElementById('emiAmt');
-const rate = document.getElementById('emiRate');
-const yrs = document.getElementById('emiYrs');
-function emi() {
-  const P = +amt.value, r = +rate.value / 1200, nM = +yrs.value * 12;
-  const E = r ? (P * r * Math.pow(1 + r, nM)) / (Math.pow(1 + r, nM) - 1) : P / nM;
-  const total = E * nM, interest = total - P;
-  document.getElementById('emiAmtOut').textContent = inr(P);
-  document.getElementById('emiRateOut').textContent = `${(+rate.value).toFixed(2).replace(/\.?0+$/, '')}%`;
-  document.getElementById('emiYrsOut').textContent = `${yrs.value} years`;
-  document.getElementById('emiOut').textContent = inr(E);
-  document.getElementById('emiP').textContent = inr(P);
-  document.getElementById('emiI').textContent = inr(interest);
-  document.getElementById('emiBarP').style.width = `${((P / total) * 100).toFixed(1)}%`;
-  [amt, rate, yrs].forEach((i) => i.style.setProperty('--fill', `${((i.value - i.min) / (i.max - i.min)) * 100}%`));
+/* ---------- area statement (brochure) ---------- */
+const FLATS = '01 2BHK 1485 East|02 2BHK 1335 East|03 3BHK 1780 North|04 3BHK 2165 North|05 2BHK 1275 North|06 2.5BHK 1565 East|07 2.5BHK 1530 East|08 2.5BHK 1530 West|09 2.5BHK 1525 East|10 3BHK 1695 West|11 2BHK 1245 North|12 2BHK 1060 East|13 2BHK 1425 West|14 3BHK 2175 West|15 3BHK 1615 East|16 3BHK 1695 West|17 2BHK 1145 West|18 2BHK 1245 East|19 2BHK 1260 West|20 2BHK 1300 East|21 2BHK 1255 East|22 2BHK 1160 West|23 3BHK 1695 West'.split('|').map((r) => r.split(' '));
+const grid = document.getElementById('areaGrid');
+if (grid) {
+  const render = (f) => {
+    grid.innerHTML = FLATS.filter((r) => f === 'all' || r[1] === f).map((r) => `<div class="flat"><b>${r[0]}</b><span>${r[1].replace('BHK', ' BHK')}</span><strong>${(+r[2]).toLocaleString('en-IN')}</strong><em>${r[3]} facing</em></div>`).join('');
+  };
+  document.querySelectorAll('[data-filter]').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-filter]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    render(b.dataset.filter);
+  }));
+  render('all');
 }
-[amt, rate, yrs].forEach((i) => i.addEventListener('input', emi));
-emi();
