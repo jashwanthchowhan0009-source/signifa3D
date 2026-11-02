@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 /* =====================================================================
    Signifa walk-through
@@ -283,6 +285,7 @@ function tiledBox(w, h, d) {             // window texture tiles at 4 bays x 4 f
   return g;
 }
 const unitBox = new THREE.BoxGeometry(1, 1, 1);
+const carSlots = [], roadCars = [];
 function inst(geo, mat, list, cast = true) {
   const m = new THREE.InstancedMesh(geo, mat, list.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
   list.forEach((t, i) => { m4.compose(new THREE.Vector3(t[0], t[1], t[2]), q, new THREE.Vector3(t[3], t[4], t[5])); m.setMatrixAt(i, m4); });
@@ -293,6 +296,7 @@ function car(parent, x, z, ry, mat) {
   box(g, mat, 1.85, 0.7, 4.4, 0, 0.6, 0, { round: 0.28 });
   box(g, M.black, 1.65, 0.55, 2.3, 0, 1.15, -0.2, { round: 0.22 });
   for (const [p, q] of [[-0.85, 1.35], [0.85, 1.35], [-0.85, -1.35], [0.85, -1.35]]) cyl(g, M.black, 0.34, 0.34, 0.25, p, 0.34, q, 14).rotation.z = Math.PI / 2;
+  carSlots.push(g);
   return g;
 }
 function sign(text, sub, w, h, x, y, z) {
@@ -316,7 +320,7 @@ windowTex.repeat.set(1, 1);
   const dashes = []; for (let x = -176; x <= 176; x += 9) dashes.push([x, 0.05, 43, 4, 0.02, 0.22]);
   inst(unitBox, M.line, dashes, false);
   for (let x = -170; x <= 170; x += 15) tree(ext, x + rand() * 4, 57 + rand() * 3, 1.3 + rand() * 0.4);
-  car(ext, 26, 39, Math.PI / 2, M.carRed); car(ext, -48, 47, -Math.PI / 2, M.carGrey); car(ext, 160, 47.5, -Math.PI / 2, M.carWhite);
+  roadCars.push([car(ext, 26, 39, Math.PI / 2, M.carRed), 11], [car(ext, -48, 47, -Math.PI / 2, M.carGrey), -9], [car(ext, 160, 47, -Math.PI / 2, M.carWhite), -12], [car(ext, -120, 39, Math.PI / 2, M.carBlue), 10]);
 
   // compound wall and the entrance gate (white portal, timber block, as in the brochure)
   box(ext, M.stone, 177, 1.9, 0.45, -24.5, 0.95, 32.5); box(ext, M.stone, 25, 1.9, 0.45, 88.5, 0.95, 32.5);
@@ -374,12 +378,12 @@ windowTex.repeat.set(1, 1);
   for (let x = -58; x <= 58; x += 3) if (Math.abs(x) > 9) bush(ext, x, 0.4, 12.3, 0.55);
 
   // swimming pool, kids pool, loungers, dress changing rooms
-  box(ext, M.stone, 30, 0.3, 16, 80, 0.15, 6);
-  box(ext, M.water, 22, 0.08, 9, 80, 0.33, 4.5, { cast: false });
-  box(ext, M.water, 5, 0.08, 3.2, 70, 0.33, 11.4, { cast: false });
-  for (let i = 0; i < 6; i++) {
-    box(ext, M.linen, 0.75, 0.25, 1.9, 76 + i * 2.6, 0.45, 11.8, { round: 0.1 });
-    if (i % 2) { cyl(ext, M.charcoal, 0.03, 0.03, 2.3, 77.3 + i * 2.6, 1.45, 11.8, 6); const u = new THREE.Mesh(new THREE.ConeGeometry(1.3, 0.5, 8), M.linen); u.position.set(77.3 + i * 2.6, 2.6, 11.8); u.castShadow = true; ext.add(u); }
+  const PH = 1.84;                         // the supplied pool is 1.8 m deep, so it sits in a raised deck
+  for (const [w, d, x, z] of [[7.5, 16, 68.75, 6], [7.5, 16, 91.25, 6], [15, 2.5, 80, 12.75], [15, 2.5, 80, -0.75]]) box(ext, M.stone, w, PH, d, x, PH / 2, z);
+  for (let i = 0; i < 6; i++) box(ext, M.stone, 8, (i + 1) * PH / 6, 0.42, 80, (i + 1) * PH / 12, 16.3 - i * 0.42);
+  for (let i = 0; i < 5; i++) {
+    box(ext, M.linen, 1.9, 0.25, 0.75, 68.75, PH + 0.15, -0.5 + i * 2.7, { round: 0.1 });
+    if (i % 2) { cyl(ext, M.charcoal, 0.03, 0.03, 2.3, 68.75, PH + 1.15, 0.85 + i * 2.7, 6); const u = new THREE.Mesh(new THREE.ConeGeometry(1.3, 0.5, 8), M.linen); u.position.set(68.75, PH + 2.3, 0.85 + i * 2.7); u.castShadow = true; ext.add(u); }
   }
   box(ext, M.white, 10, 3.2, 4.6, 86, 1.6, -5.5); box(ext, M.wood, 10.4, 0.5, 5, 86, 3.4, -5.5);
   [[93.5, 13], [66, -3], [93, -11], [73, -11]].forEach(([x, z]) => palm(ext, x, z, 9 + rand() * 2, 0.7));
@@ -437,6 +441,38 @@ windowTex.repeat.set(1, 1);
   // landscape: palms inside the wall, trees at the back
   for (let x = -104; x <= 96; x += 10) if (x < 60 || x > 80) palm(ext, x + rand() * 2, 30.9, 7.5 + rand() * 2, 0.5);
   for (let x = -106; x <= 96; x += 9) tree(ext, x + rand() * 3, -39.5, 1.2 + rand() * 0.5);
+}
+
+/* supplied models: cars, scooter, pool (assets/models, meshopt + webp) */
+{
+  const gl = new GLTFLoader(); gl.setMeshoptDecoder(MeshoptDecoder);
+  const load = (n) => new Promise((res) => gl.load(`assets/models/${n}.glb`, (g) => res(g.scene), undefined, () => res(null)));
+  const fit = (obj, len, ry = 0) => {        // scale to a real length, centre on x/z, stand on the ground
+    const w = new THREE.Group(); w.add(obj); obj.rotation.y = ry;
+    let bb = new THREE.Box3().setFromObject(obj); const sz = bb.getSize(new THREE.Vector3());
+    if (len) obj.scale.multiplyScalar(len / Math.max(sz.x, sz.z));
+    bb = new THREE.Box3().setFromObject(obj); const c = bb.getCenter(new THREE.Vector3());
+    obj.position.x -= c.x; obj.position.z -= c.z; obj.position.y -= bb.min.y;
+    obj.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    return w;
+  };
+  Promise.all(['camaro', 'K578', 'm05h', 'raptor', 'vino', 'pool'].map(load)).then(([camaro, k578, m05h, raptor, vino, pool]) => {
+    const cars = [[camaro, 4.8], [k578, 4.6], [m05h, 4.7], [raptor, 5.9]].filter((c) => c[0]).map(([s, l]) => fit(s, l));
+    if (cars.length) carSlots.forEach((g, i) => { g.clear(); g.add(cars[i % cars.length].clone()); });
+    if (vino) {
+      const v = fit(vino, 0);
+      for (const x0 of [-56, 44]) for (let i = 0; i < 14; i++) { const s = v.clone(); s.position.set(x0 + i * 0.9, 0, -11); ext.add(s); }
+    }
+    if (pool) {                             // the FBX shipped without its texture files, so map its named materials to ours
+      const poolTile = new THREE.MeshStandardMaterial({ color: 0x7FC6D6, roughness: 0.35 });
+      const poolWater = new THREE.MeshPhysicalMaterial({ color: 0x1EA9C4, roughness: 0.03, clearcoat: 1, transparent: true, opacity: 0.82, emissive: 0x16C4D6, emissiveIntensity: 0.08 });
+      const map = { SwimmingPoolTiles: poolTile, StoneTiles: M.stone, SwimmingPoolEdgeTiles: M.white, Water: poolWater };
+      pool.traverse((o) => { if (o.isMesh) o.material = map[o.material.name] || o.material; });
+      M.poolWater = poolWater;
+      const p = fit(pool, 0, Math.PI / 2); p.position.set(80, 0.01, 6); ext.add(p);
+    }
+    dirty = true;
+  });
 }
 
 /* walking / jogging track with people on it */
@@ -827,6 +863,7 @@ function setSun(h) {
   M.city.emissiveIntensity = night * 1.2;
   M.facadeGlass.emissiveIntensity = 0.1 + night * 0.9;
   M.water.emissiveIntensity = 0.08 + night * 0.8;
+  if (M.poolWater) M.poolWater.emissiveIntensity = 0.08 + night * 0.8;
   M.lampGlow.emissiveIntensity = 0.6 + night * 1.6;
   M.cove.emissiveIntensity = 0.3 + night * 1.6;
   extLamps.forEach((l) => (l.intensity = night * 120));
@@ -865,7 +902,7 @@ const STOPS = {
   's-hero':  { space: 'ext', p: [125, 78, 150], l: [-12, 6, -4] },
   's-road':  { space: 'ext', p: [122, 1.7, 44], l: [70, 5, 33], tag: ['Signifa Signature', 'Entry from the 60 ft road', [70, 10, 32.5]] },
   's-gate':  { space: 'ext', p: [70, 1.75, 26.5], l: [30, 5, 8], via: [[70, 1.75, 40]], tag: ['Drive way', 'Palm-lined, with a water body at the gate', [55, 3.2, 19]] },
-  's-pool':  { space: 'ext', p: [60, 4.5, 22], l: [82, 0.5, 4], tag: ['Swimming pool', 'Kids pool and dress changing rooms', [80, 2.2, 4.5]] },
+  's-pool':  { space: 'ext', p: [61, 7.5, 24], l: [80, 1.6, 5], tag: ['Swimming pool', 'Raised deck with loungers', [80, 4.4, 6]] },
   's-ev':    { space: 'ext', p: [-30, 2.4, 26], l: [-30, 1.2, 13], via: [[20, 3, 24]], tag: ['EV charging point', 'Four covered bays', [-29.6, 4.8, 15.4]] },
   's-jog':   { space: 'ext', p: [0, 3, 30], l: [0, 1, 28], follow: true, tag: ['Walking and jogging track', 'A loop around the whole community', 'runner'] },
   's-play':  { space: 'ext', p: [-56, 8, 31], l: [-78, 0.5, 15], tag: ['Kids play area', 'Shuttle court and half basketball court', [-70, 3.6, 18]] },
@@ -1046,6 +1083,7 @@ function frame(now) {
   const dt = Math.min((now - lastT) / 16.67, 3); lastT = now;
   if (sunAnim) sunAnim(now);
   moveRunners(dt / 60);
+  for (const [g, v] of roadCars) { g.position.x += (v * dt) / 60; if (g.position.x > 175) g.position.x -= 350; else if (g.position.x < -175) g.position.x += 350; }
   if (seg !== followSeg) { followSeg = seg; let best = 1e12; for (const r of runners) { const d = r.g.position.distanceToSquared(camP); if (d < best && Math.abs(r.v) > 2) { best = d; followR = r; } } }
   if (followStop && followR.tg) {
     const r = followR, n = _n.set(r.tg.z, 0, -r.tg.x);

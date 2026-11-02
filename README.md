@@ -35,4 +35,4 @@ Static files only — GitHub Pages, Vercel or Netlify. Three.js loads from jsDel
 | `styles.css` | Bronze / gold / ivory theme, layout, transitions |
 | `main.js` | Builds the tower and the 3 BHK, sun and lights, tour camera (`STOPS`), floor plan |
 | `interactions.js` | Text reveals, count-ups, tilt cards, magnetic buttons, EMI calculator |
-| `assets/` | Painted model, walkthrough video and poster |
+| `assets/models/` | Supplied cars (Camaro, K578, 05H, F-150 Raptor), Vino scooters and pool, compressed with meshopt + WebP |
