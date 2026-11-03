@@ -1227,8 +1227,8 @@ function openSheet(id) {
 function closeSheet() { if (!sheetOpen) return; sheetOpen = false; canvasVisible = true; dirty = true; sheetEl.classList.remove('open'); sheetEl.setAttribute('aria-hidden', 'true'); document.body.classList.remove('sheet-open'); }
 nextBtn.addEventListener('click', next); prevBtn.addEventListener('click', prev);
 $('#sheetClose').addEventListener('click', closeSheet);
-document.querySelectorAll('[data-tour]').forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); switchTour(b.dataset.tour, 0); }));
-document.querySelectorAll('[data-sheet]').forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); openSheet(b.dataset.sheet); }));
+document.querySelectorAll('button[data-tour], a[data-tour]').forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); switchTour(b.dataset.tour, 0); }));
+document.querySelectorAll('button[data-sheet], a[data-sheet]').forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); openSheet(b.dataset.sheet); }));
 addEventListener('keydown', (e) => {
   if (e.target.closest('input, select, textarea')) return;
   if (e.key === 'Escape') closeSheet();

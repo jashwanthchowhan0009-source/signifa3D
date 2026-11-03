@@ -36,7 +36,7 @@ body[data-tour="2"] .word, body[data-tour="3"] .word { display: none; }
 .loader-num::after { content: "%"; font-size: .35em; vertical-align: top; }
 .loader.done { opacity: 0; visibility: hidden; }
 .fade { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: #15110D; opacity: 0; pointer-events: none; transition: opacity .6s var(--ease); }
-.fade.on { opacity: 1; pointer-events: auto; }
+.fade.on { opacity: 1; }
 .fade p { color: var(--gold-light); font: 600 clamp(1.1rem, 2.4vw, 1.6rem) var(--font); letter-spacing: .01em; }
 .fade p::after { content: ""; display: block; width: 46px; height: 2px; margin: 16px auto 0; background: var(--gold); animation: lift 1.2s var(--ease) infinite alternate; }
 @keyframes lift { from { transform: translateY(6px); } to { transform: translateY(-6px); } }
