@@ -1,15 +1,13 @@
 # Signifa 3D
 
-Interactive 3D website for [Signifa Builders & Developers](https://signifadevelopers.com/), Hyderabad.
+Interactive 3D tour for **Signifa Signature**, Machabollaram, Hyderabad ([Signifa Builders & Developers](https://signifadevelopers.com/)).
 
-- **Walk-through tour** — scroll from the gate, past the lobby, up the lift to the fifth floor,
-  through the teak front door and into every room of a representative 3 BHK
-  (living, balcony, dining & kitchen, three bedrooms).
-- **Built in code** — the tower, site, flat, furniture and lighting are generated in `main.js`
-  with Three.js. No model files to download, so it loads fast.
-- **Live floor plan** — a mini plan shows where you are and which way you face. Click a room to jump there.
-- **Sun dial** — drag from sunrise to night; sky, shadows, windows and room lights follow.
-- **Projects, amenities and specifications** from signifadevelopers.com, EMI calculator, WhatsApp site-visit form.
+- **Arrow-driven tour, no page scroll.** ‹ › buttons, arrow keys or a swipe move between camera stops. Drag to look around.
+- **Exterior tour (10 stops):** in from the 60 ft road, gate and water body, pool deck with cabana, solar EV station with Cybertrucks, jogging track (follows a runner), kids play area and courts, club house with gym and yoga, residents lobby.
+- **Home tours:** 3 BHK (1,695 sft) and 2 BHK (1,060 sft), laid out after the brochure plans. Walls are generated from room rectangles in `PLANS` (main.js). Live floor plan shows where you stand.
+- **People:** jointed figures (hips, knees, shoulders, elbows) walking, running, swimming, swinging and doing yoga.
+- **Sun dial:** sunrise to night; windows, lamps and the pool light up after dark.
+- After the last stop, an information page slides up: projects, amenities, specifications, area statement, contact and footer.
 
 ## Run locally
 
@@ -31,8 +29,8 @@ Static files only — GitHub Pages, Vercel or Netlify. Three.js loads from jsDel
 
 | File | What it is |
 | --- | --- |
-| `index.html` | Page content: one slide per tour stop, then projects, amenities and contact |
+| `index.html` | Tour controls, caption, info page (projects, amenities, area statement, contact) |
 | `styles.css` | Bronze / gold / ivory theme, layout, transitions |
-| `main.js` | Builds the tower and the 3 BHK, sun and lights, tour camera (`STOPS`), floor plan |
-| `interactions.js` | Text reveals, count-ups, tilt cards, magnetic buttons, EMI calculator |
+| `main.js` | Site, tower, amenities, people, both flats (`PLANS`), sun, tour stops (`EXT`, `PLANS[...].stops`) |
+| `interactions.js` | Count-ups, magnetic buttons, area statement grid |
 | `assets/models/` | Supplied cars (Camaro, K578, 05H, F-150 Raptor), Vino scooters and pool, compressed with meshopt + WebP |

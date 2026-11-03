@@ -3,26 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Signifa Builders & Developers, Hyderabad</title>
-  <meta name="description" content="Signifa Builders & Developers, Hyderabad. RERA-registered, Vastu-compliant luxury homes at Machabollaram and Suchitra. Walk through a Signifa home in 3D.">
+  <title>Signifa Signature 3D Tour</title>
+  <meta name="description" content="Walk through Signifa Signature, Machabollaram, Hyderabad in 3D: the gated community, its amenities, and a 2 or 3 BHK home.">
   <meta name="theme-color" content="#6FA3D8">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Syne:wght@700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
-    }
-  }
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
   </script>
 </head>
-<body data-light="day">
-  <a class="skip" href="#projects">Skip to projects</a>
-
-  <!-- Layer 0: live sky + giant word that sits behind the house -->
+<body data-light="day" data-tour="ext">
   <div class="sky" id="sky" aria-hidden="true">
     <svg class="clouds" preserveAspectRatio="none" aria-hidden="true">
       <filter id="cloudf" x="0" y="0" width="100%" height="100%">
@@ -33,196 +25,53 @@
       <rect width="100%" height="100%" filter="url(#cloudf)"/>
     </svg>
   </div>
-  <svg class="swoosh" viewBox="0 0 200 1000" preserveAspectRatio="none" aria-hidden="true">
-    <path d="M0 0 H70 C 10 220, 160 430, 90 640 C 60 760, 120 900, 150 1000 H0 Z" fill="#FFFDF8"/>
-    <path d="M70 0 C 10 220, 160 430, 90 640 C 60 760, 120 900, 150 1000" fill="none" stroke="url(#gold)" stroke-width="3"/>
-    <defs><linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9CE8E"/><stop offset=".5" stop-color="#B8893F"/><stop offset="1" stop-color="#E9CE8E"/></linearGradient></defs>
-  </svg>
   <div class="word" id="word" aria-hidden="true"><span id="wordText">SIGNIFA</span></div>
+  <canvas id="scene" aria-label="3D tour of Signifa Signature. Use the arrows to move, drag to look around."></canvas>
+  <div class="loader" id="loader" role="status"><span class="loader-num" id="loaderNum">0</span><span id="loaderText">Building Signifa Signature</span></div>
+  <div class="fade" id="fade" aria-hidden="true"><p>Taking the lift</p></div>
+  <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
 
-  <!-- Layer 1: the house -->
-  <canvas id="scene" aria-label="Interactive 3D villa. Drag to turn it."></canvas>
-  <div class="loader" id="loader" role="status">
-    <span class="loader-num" id="loaderNum">0</span>
-    <span class="loader-txt" id="loaderText">Building the villa</span>
-  </div>
-
-  <!-- Layer 2: interface -->
   <header class="nav" id="nav">
-    <a class="brand" href="#top" aria-label="Signifa home">
+    <a class="brand" href="#" data-tour="ext" aria-label="Signifa, back to the start">
       <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M5 35V15L20 5l15 10v20" fill="none" stroke="currentColor" stroke-width="3"/><path d="M14 35V22h12v13" fill="none" stroke="currentColor" stroke-width="3"/></svg>
       <span>Signifa</span>
     </a>
-    <nav aria-label="Main">
-      <a href="#s-road">The tour</a>
-      <a href="#projects">Projects</a>
-      <a href="#values">About</a>
-      <a href="#contact">Contact</a>
+    <nav aria-label="Tours">
+      <button type="button" data-tour="ext">Exterior tour</button>
+      <button type="button" data-tour="3">3 BHK home</button>
+      <button type="button" data-tour="2">2 BHK home</button>
+      <button type="button" data-sheet="amenities">Amenities</button>
+      <button type="button" data-sheet="projects">Projects</button>
     </nav>
-    <a class="btn btn-sm" href="#contact">Book a site visit</a>
+    <button class="btn btn-sm" type="button" data-sheet="contact">Book a site visit</button>
   </header>
 
-  <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
-  <ol class="pager" id="pager" aria-label="Slides"></ol>
-  <p class="counter" id="counter" aria-live="polite"><span id="counterNum">01</span><span class="counter-of"> / <span id="counterTotal">09</span></span><span class="counter-name" id="counterName">Welcome</span></p>
-  <div class="fade" id="fade" aria-hidden="true"><p>Taking the lift to the fifth floor</p></div>
+  <section class="caption" id="caption" aria-live="polite"><p class="cap-k" id="capK"></p><h1 class="cap-t" id="capT"></h1><p class="cap-d" id="capD"></p><div class="cap-a" id="capA"></div></section>
   <p class="room-tag" id="roomTag" aria-hidden="true"><b></b><span></span></p>
-  <figure class="plan" id="plan" aria-label="Floor plan of the 3 BHK home">
-    <svg id="planSvg" viewBox="-0.6 -0.6 16.2 13.2"></svg>
-    <div class="unit-switch" role="group" aria-label="Home type"><button type="button" data-unit="3" aria-pressed="true">3 BHK</button><button type="button" data-unit="2" aria-pressed="false">2 BHK + Study</button></div>
-    <figcaption id="planCap"></figcaption>
-  </figure>
+  <figure class="plan" id="plan" aria-label="Floor plan of this home"><svg id="planSvg"></svg><figcaption id="planCap"></figcaption></figure>
+  <ol class="pager" id="pager" aria-label="Tour stops"></ol>
 
-  <main id="top">
-    <!-- 1. HERO, far -->
-    <!-- TOUR: each slide is a stop on the walk. Camera keyframes live in main.js, keyed by slide id. -->
-    <section class="slide hero" id="s-hero" data-name="Welcome" data-word="SIGNIFA" aria-label="Introduction">
-      <div class="hero-copy">
-        <p class="eyebrow">Signifa Signature, Machabollaram, Hyderabad</p>
-        <h1><span class="line">Walk into</span><span class="line">your home.</span></h1>
-        <p class="hero-sub">Scroll to take the tour. In from the 60 ft road, past the pool, EV chargers and jogging track, and into a Signifa 2 or 3 BHK.</p>
-        <div class="hero-actions">
-          <a class="btn" href="#s-road">Start the tour</a>
-          <a class="btn btn-line" href="#contact">Book a site visit</a>
-        </div>
-      </div>
-      <div class="sundial" id="sundial">
-        <div class="sun-row">
-          <label for="sun">Time of day</label>
-          <output id="sunOut">4:55 pm</output>
-        </div>
-        <div class="sun-track">
-          <svg class="sun-arc" viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><path d="M2 58 Q150 -40 298 58" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 6" stroke-linecap="round"/></svg>
-          <input type="range" id="sun" min="6" max="21" step="0.05" value="16.9" aria-valuetext="4:55 pm">
-        </div>
-        <div class="sun-ends"><span>Sunrise</span><span>Night</span></div>
-        <p class="sun-note" id="sunNote" aria-live="polite">Golden hour. Warm light on the west terraces.</p>
-      </div>
-      <p class="drag-hint" aria-hidden="true"><span class="drag-icon"></span>Drag to look around</p>
-    </section>
+  <nav class="stepper" aria-label="Tour controls">
+    <button type="button" class="arrow" id="prev" aria-label="Previous stop"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <p class="counter" aria-live="polite"><b id="counterNum">01</b><span>/ <i id="counterTotal">10</i></span><em id="counterName">Welcome</em></p>
+    <button type="button" class="arrow" id="next" aria-label="Next stop"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+  </nav>
 
-    <section class="slide" id="s-road" data-name="The road" data-word="ARRIVE">
-      <article class="card card-l">
-        <p class="card-k">Machabollaram, near Kompally</p>
-        <h2>Turn in off the 60 ft road.</h2>
-        <p>A gated community of 178 homes in one C+S+8 tower, with a clear title and more than 20 amenities.</p>
-      </article>
-    </section>
+  <div class="sundial" id="sundial">
+    <div class="sun-row"><label for="sun">Time of day</label><output id="sunOut">4:55 pm</output></div>
+    <input type="range" id="sun" min="6" max="21" step="0.05" value="16.9" aria-valuetext="4:55 pm">
+    <p class="sun-note" id="sunNote" aria-live="polite"></p>
+  </div>
 
-    <section class="slide" id="s-gate" data-name="Entrance" data-word="ENTER">
-      <article class="card card-r">
-        <p class="card-k">Entry and drive way</p>
-        <h2>Through the gate, past the water body.</h2>
-        <p>24/7 security and CCTV at the gate, and a palm-lined drive way to every corner of the site.</p>
-      </article>
-    </section>
+  <aside class="rail" aria-label="Quick contact">
+    <a href="tel:+918019452299"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 5a2 2 0 0 1 2-2Z"/></svg><span>Call</span></a>
+    <a href="https://api.whatsapp.com/send?phone=918019452299&text=Hello%2C%20I%27m%20looking%20to%20buy%20a%20flat.%20Could%20you%20share%20details%20of%20your%20ongoing%20projects%3F" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M4 20l1.3-4A8.5 8.5 0 1 1 8 18.8L4 20Z"/></svg><span>WhatsApp</span></a>
+    <a href="#contact"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M3 6h18v12H3zM3 7l9 6 9-6"/></svg><span>Contact</span></a>
+  </aside>
 
-    <section class="slide" id="s-pool" data-name="Swimming pool" data-word="SPLASH">
-      <article class="card card-l">
-        <p class="card-k">Swimming pool</p>
-        <h2>A pool right inside the gate.</h2>
-        <p>A raised pool deck with sun loungers and umbrellas, and dress changing rooms beside it.</p>
-      </article>
-    </section>
+  <div class="sheet" id="sheet" aria-hidden="true">
+    <button class="sheet-close" type="button" id="sheetClose">Back to the tour</button>
 
-    <section class="slide" id="s-ev" data-name="EV charging" data-word="CHARGE">
-      <article class="card card-r">
-        <p class="card-k">EV charging point</p>
-        <h2>Plug in under cover.</h2>
-        <p>Covered EV charging bays on the drive way, and covered car parking for every home in the stilt.</p>
-      </article>
-    </section>
-
-    <section class="slide" id="s-jog" data-name="Jogging track" data-word="STRIDE">
-      <article class="card card-l">
-        <p class="card-k">Walking and jogging track</p>
-        <h2>A loop around the whole community.</h2>
-        <p>Morning runs and evening walks on a track that circles the tower, the gardens and the play areas.</p>
-      </article>
-    </section>
-
-    <section class="slide" id="s-play" data-name="Play and courts" data-word="PLAY">
-      <article class="card card-r">
-        <p class="card-k">Kids play area and courts</p>
-        <h2>Room to play, right downstairs.</h2>
-        <p>Kids play area, shuttle court, half basketball court and a cricket practice net.</p>
-      </article>
-    </section>
-
-    <section class="slide" id="s-club" data-name="Club house" data-word="UNWIND">
-      <article class="card card-l">
-        <p class="card-k">Club house</p>
-        <h2>Gym, games and a quiet corner.</h2>
-        <p>Indoor gym, indoor games, yoga and meditation hall, working pods and guest rooms, with gazebos and a senior citizen lounge outside.</p>
-      </article>
-    </section>
-
-    <section class="slide" id="s-lobby" data-name="Lobby" data-word="LOBBY">
-      <article class="card card-r">
-        <p class="card-k">Residents lobby</p>
-        <h2>Home is a lift ride away.</h2>
-        <p>Drop-off under the canopy, KONE lifts, intercom to security and 1 kVA power backup for every flat.</p>
-      </article>
-    </section>
-
-    <section class="slide" id="s-door" data-name="Your door" data-word="WELCOME" data-space="int">
-      <article class="card card-r">
-        <p class="card-k">Fifth floor</p>
-        <h2>Your teak front door.</h2>
-        <p>Pick a home, then keep scrolling. The door opens and you step inside.</p>
-        <div class="unit-switch" role="group" aria-label="Home type"><button type="button" data-unit="3" aria-pressed="true">3 BHK</button><button type="button" data-unit="2" aria-pressed="false">2 BHK + Study</button></div>
-      </article>
-    </section>
-
-    <section class="slide" id="s-living" data-name="Living room" data-word="LIVING" data-space="int" data-room="living">
-      <article class="card card-l">
-        <p class="card-k">Living room</p>
-        <h2>Bright, open and made for family.</h2>
-        <p>Full-width sliding doors open the living room to the balcony. Vitrified tile floors run through the home.</p>
-      </article>
-    </section>
-
-    <section class="slide" id="s-balcony" data-name="Balcony" data-word="VIEW" data-space="int" data-room="balcony">
-      <article class="card card-r">
-        <p class="card-k">Balcony</p>
-        <h2>Evenings with a view.</h2>
-        <p>UPVC sliding doors with mosquito-mesh provision and a glass railing that keeps the view open.</p>
-      </article>
-    </section>
-
-    <section class="slide" id="s-dining" data-name="Dining &amp; kitchen" data-word="DINE" data-space="int" data-room="kitchen">
-      <article class="card card-l">
-        <p class="card-k">Dining and kitchen</p>
-        <h2>Cook, talk, eat together.</h2>
-        <p>A granite platform with a steel sink, ceramic dado above the counter, and points for a water purifier and washing machine.</p>
-      </article>
-    </section>
-
-    <section class="slide" id="s-master" data-name="Master bedroom" data-word="REST" data-space="int" data-room="master">
-      <article class="card card-r">
-        <p class="card-k">Master bedroom</p>
-        <h2>Your own quiet corner.</h2>
-        <p>A large window, an AC point, a walk-in wardrobe and an attached bathroom with anti-skid flooring.</p>
-      </article>
-    </section>
-
-    <section class="slide" id="s-bed2" data-name="Bedroom 2" data-word="DREAM" data-space="int" data-room="bed2">
-      <article class="card card-l">
-        <p class="card-k">Second bedroom</p>
-        <h2>Room for the children to grow.</h2>
-        <p>Windows on two sides for cross-ventilation, with its own bathroom next door.</p>
-      </article>
-    </section>
-
-    <section class="slide" id="s-bed3" data-name="Bedroom 3" data-word="STUDY" data-space="int" data-room="bed3">
-      <article class="card card-r">
-        <p class="card-k">Third bedroom</p>
-        <h2>Guest room, study or both.</h2>
-        <p>A flexible room beside the dining area, close to the common bathroom.</p>
-      </article>
-    </section>
-
-    <div class="sheet">
       <section class="projects-sec" id="projects" aria-labelledby="projTitle">
         <h2 id="projTitle">Our projects.</h2>
         <p class="sec-sub">The home you just walked through is a representative 3 BHK. Every layout below is RERA registered.</p>
@@ -258,7 +107,7 @@
         </div>
       </section>
 
-      <section class="amen" aria-labelledby="amenTitle">
+      <section class="amen" id="amenities" aria-labelledby="amenTitle">
         <h2 id="amenTitle">20+ amenities.</h2>
         <ul class="amen-list"><li>Swimming pool</li><li>Kids pool</li><li>Dress changing rooms</li><li>Water body</li><li>Walking and jogging track</li><li>EV charging point</li><li>Club house</li><li>Indoor gym</li><li>Indoor games</li><li>Indoor multipurpose hall</li><li>Yoga and meditation hall</li><li>Working pods</li><li>Guest rooms</li><li>Kids play area</li><li>Shuttle court</li><li>Half basketball court</li><li>Cricket practice net</li><li>Gazebos</li><li>Landscape garden</li><li>Park</li><li>Senior citizen lounge</li><li>STP</li></ul>
         <h3 class="sub-h">Project highlights</h3>
@@ -355,14 +204,7 @@
           </nav>
         </div>
       </footer>
-    </div>
-  </main>
-
-  <aside class="rail" aria-label="Quick contact">
-    <a href="tel:+918019452299"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 5a2 2 0 0 1 2-2Z"/></svg><span>Call</span></a>
-    <a href="https://api.whatsapp.com/send?phone=918019452299&text=Hello%2C%20I%27m%20looking%20to%20buy%20a%20flat.%20Could%20you%20share%20details%20of%20your%20ongoing%20projects%3F" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M4 20l1.3-4A8.5 8.5 0 1 1 8 18.8L4 20Z"/></svg><span>WhatsApp</span></a>
-    <a href="#contact"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M3 6h18v12H3zM3 7l9 6 9-6"/></svg><span>Contact</span></a>
-  </aside>
+  </div>
 
   <script type="module" src="main.js"></script>
   <script type="module" src="interactions.js"></script>
