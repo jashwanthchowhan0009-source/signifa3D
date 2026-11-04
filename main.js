@@ -43,7 +43,7 @@ try {
   throw e;
 }
 renderer.setClearColor(0x000000, 0);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
@@ -306,14 +306,14 @@ function sign(text, sub, w, h, x, y, z) {
 }
 windowTex.repeat.set(1, 1);
 /* =====================================================================
-   SITE, after the brochure master plan. x runs north (-) to south (+),
-   z runs west (-) to east (+). The 60 ft road runs along the east side
-   and curves round the south end; Entry & exit is at the south-east
-   corner. Amenities at the north end, pool at the south end, 23 flats
-   per floor in three columns of wings joined by 6'6" corridors.
+   SITE, traced from the brochure master plan. I(x, y) turns a point on the
+   plan image (2x crop) into world metres: x runs north (-) to south (+),
+   z runs west (-) to east (+). 0.11 m per plan pixel.
    ===================================================================== */
+const I = (px, py) => [(py - 760) * 0.11, (px - 320) * 0.11];
+const IV = (px, py, y = 0) => { const [x, z] = I(px, py); return new THREE.Vector3(x, y, z); };
 Object.assign(M, {
-  deck: new THREE.MeshStandardMaterial({ color: 0xFFFFFF, map: woodTex, roughness: 0.6 }),
+  deck: new THREE.MeshStandardMaterial({ color: 0xB07A4E, map: woodTex, roughness: 0.6 }),
   steel: new THREE.MeshStandardMaterial({ color: 0xC3C7CB, metalness: 0.85, roughness: 0.28 }),
   solar: new THREE.MeshStandardMaterial({ color: 0x1B2A4A, metalness: 0.5, roughness: 0.22 }),
   ylw: new THREE.MeshStandardMaterial({ color: 0xF2C230, roughness: 0.5 }),
@@ -321,274 +321,310 @@ Object.assign(M, {
   white2: new THREE.MeshStandardMaterial({ color: 0xF4F4F2, roughness: 0.4 }),
   flower: new THREE.MeshStandardMaterial({ color: 0xE45C8A, roughness: 0.8 }),
   flower2: new THREE.MeshStandardMaterial({ color: 0xF2B632, roughness: 0.8 }),
-  poolFloor: new THREE.MeshStandardMaterial({ color: 0x7FCAD8, roughness: 0.4, side: THREE.DoubleSide }),
+  hedge: new THREE.MeshStandardMaterial({ color: 0x2F5A2A, roughness: 0.9, flatShading: true }),
+  pergola: new THREE.MeshStandardMaterial({ color: 0xA2456A, roughness: 0.7 }),
 });
+// the brochure palette: deep lawn, darker drive way, terracotta track, cream blocks
+M.lawn.color.setHex(0x4E7E38); M.paving.color.setHex(0xA9A59D); M.track.color.setHex(0xB0432C); M.plaster.color.setHex(0xEFE4CC);
 const grp = (x, y, z, ry = 0) => { const q = new THREE.Group(); q.position.set(x, y, z); q.rotation.y = ry; ext.add(q); return q; };
 const bench = (x, z, ry) => { const q = grp(x, 0, z, ry);
   box(q, M.wood, 1.6, 0.06, 0.45, 0, 0.45, 0.22); box(q, M.wood, 1.6, 0.4, 0.05, 0, 0.72, 0.02);
   for (const s of [-1, 1]) box(q, M.charcoal, 0.06, 0.45, 0.42, s * 0.7, 0.22, 0.22); return q; };
 const umbrella = (x, y, z, r = 1.5) => { cyl(ext, M.charcoal, 0.03, 0.03, 2.4, x, y + 1.2, z, 6); const u = new THREE.Mesh(new THREE.ConeGeometry(r, 0.45, 12), M.linen); u.position.set(x, y + 2.45, z); u.castShadow = true; ext.add(u); };
 const segBox = (mat, x1, z1, x2, z2, h, t, y = h / 2) => { const l = Math.hypot(x2 - x1, z2 - z1), m = box(ext, mat, l, h, t, (x1 + x2) / 2, y, (z1 + z2) / 2); m.rotation.y = -Math.atan2(z2 - z1, x2 - x1); return m; };
-function ribbon(curve, w, y, mat, off = 0, n = 160) {
+const flatShape = (pts, mat, y) => { const s = new THREE.Shape(pts.map(([x, z]) => new THREE.Vector2(x, -z))); const m = new THREE.Mesh(new THREE.ShapeGeometry(s), mat); m.rotation.x = -Math.PI / 2; m.position.y = y; m.receiveShadow = true; ext.add(m); return m; };
+function ribbon(curve, w, y, mat, off = 0, n = 200) {
   const pos = [], idx = [], p = new THREE.Vector3(), t = new THREE.Vector3();
   for (let i = 0; i <= n; i++) { curve.getPointAt(i / n, p); curve.getTangentAt(i / n, t); const nx = -t.z, nz = t.x;
     pos.push(p.x + nx * (off - w / 2), y, p.z + nz * (off - w / 2), p.x + nx * (off + w / 2), y, p.z + nz * (off + w / 2));
     if (i < n) idx.push(i * 2, i * 2 + 2, i * 2 + 1, i * 2 + 1, i * 2 + 2, i * 2 + 3); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  if (g.attributes.normal.getY(0) < 0) { g.setIndex(idx.map((v, i) => idx[i - (i % 3) + [0, 2, 1][i % 3]])); g.computeVertexNormals(); }
   const m = new THREE.Mesh(g, mat); m.receiveShadow = true; ext.add(m); return m;
 }
-const roadCurve = new THREE.CatmullRomCurve3([[-180, 50], [20, 50], [62, 48], [92, 36], [108, 12], [112, -20], [110, -70], [104, -130]].map(([x, z]) => new THREE.Vector3(x, 0, z)));
-const PH = 1.0, FL = new THREE.Vector3();
+// many trees as two instanced draws (trunks + canopies) instead of hundreds of meshes
+const TREES = [];
+const addTree = (x, z, s = 1) => TREES.push([x, z, s]);
+const roadCurve = new THREE.CatmullRomCurve3([[632, -500], [634, 330], [637, 900], [630, 1150], [598, 1305], [520, 1412], [405, 1488], [250, 1552], [-60, 1650]].map(([a, b]) => IV(a, b)));
+const PH = 1.1, FL = new THREE.Vector3();
+const PLOT = [[38, 38], [398, 28], [408, 365], [565, 365], [570, 1150], [540, 1260], [470, 1340], [360, 1420], [250, 1478], [210, 1470], [150, 1260], [90, 640], [55, 420]].map(([a, b]) => I(a, b));
+const trackCurve = new THREE.CatmullRomCurve3([[108, 600], [150, 920], [190, 1238], [300, 1262], [470, 1270], [548, 1150], [550, 700], [548, 412], [400, 412], [300, 452], [290, 598]].map(([a, b]) => IV(a, b, 0.12)), true, 'catmullrom', 0.2);
 {
-  // ground, the 60 ft road with footpaths, compound wall and the entry gate
+  // ground, the 60 ft road, compound wall and the entry gate
   const land = new THREE.Mesh(new THREE.CircleGeometry(430, 64), new THREE.MeshStandardMaterial({ color: 0x8FA772, roughness: 1 }));
   land.rotation.x = -Math.PI / 2; land.position.y = -0.06; land.receiveShadow = true; ext.add(land);
-  const plot = new THREE.Shape([[-104, -40], [-104, 40], [66, 40], [92, 18], [92, -40]].map(([x, z]) => new THREE.Vector2(x, -z)));
-  const lawn = new THREE.Mesh(new THREE.ShapeGeometry(plot), M.lawn); lawn.rotation.x = -Math.PI / 2; lawn.position.y = 0.02; lawn.receiveShadow = true; ext.add(lawn);
-  box(ext, M.paving, 116, 0.1, 55, 0, 0.03, 0.5, { cast: false });
-  box(ext, M.paving, 134, 0.1, 4.4, 5, 0.035, 35, { cast: false }); box(ext, M.paving, 16, 0.1, 12, 68, 0.035, 29, { cast: false });
-  box(ext, M.paving, 22, 0.1, 13, -70, 0.035, -31, { cast: false }); box(ext, M.paving, 8, 0.1, 70, -64, 0.034, 0, { cast: false });
-  ribbon(roadCurve, 18, 0.01, M.asphalt); ribbon(roadCurve, 2.4, 0.1, M.paving, 10.2); ribbon(roadCurve, 2.4, 0.1, M.paving, -10.2);
-  const dash = [], P = new THREE.Vector3();
-  for (let i = 0; i < 70; i++) { roadCurve.getPointAt(i / 70, P); dash.push([P.x, 0.03, P.z]); }
-  const dashM = new THREE.InstancedMesh(new THREE.BoxGeometry(4, 0.02, 0.22), M.line, dash.length), m4 = new THREE.Matrix4(), q4 = new THREE.Quaternion(), T = new THREE.Vector3();
-  dash.forEach((d, i) => { roadCurve.getTangentAt(i / 70, T); q4.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.atan2(T.z, T.x)); m4.compose(new THREE.Vector3(...d), q4, new THREE.Vector3(1, 1, 1)); dashM.setMatrixAt(i, m4); });
+  flatShape(PLOT, M.lawn, 0.02);
+  flatShape([[140, 598], [300, 598], [300, 448], [398, 412], [560, 412], [562, 1150], [530, 1262], [450, 1300], [330, 1290], [190, 1262], [150, 900]].map(([a, b]) => I(a, b)), M.paving, 0.03);
+  ribbon(trackCurve, 2.2, 0.06, M.track);
+  ribbon(roadCurve, 14, 0.01, M.asphalt); ribbon(roadCurve, 2.2, 0.1, M.paving, 8.1); ribbon(roadCurve, 2.2, 0.1, M.paving, -8.1);
+  const P = new THREE.Vector3(), T = new THREE.Vector3(), n = 90;
+  const dashM = new THREE.InstancedMesh(new THREE.BoxGeometry(3, 0.02, 0.2), M.line, n), m4 = new THREE.Matrix4(), q4 = new THREE.Quaternion();
+  for (let i = 0; i < n; i++) { roadCurve.getPointAt(i / n, P); roadCurve.getTangentAt(i / n, T); q4.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.atan2(T.z, T.x)); m4.compose(P.setY(0.03), q4, new THREE.Vector3(1, 1, 1)); dashM.setMatrixAt(i, m4); }
   ext.add(dashM);
-  for (let i = 0; i < 26; i++) { roadCurve.getPointAt(i / 26, P); tree(ext, P.x + 13, P.z + (P.z > 0 && P.x < 60 ? 8 : 0) * 0 + (P.x < 60 ? 13 : 0), 1.3 + rand() * 0.4); }
-  const wall = [[-104, -40], [-104, 40], [66, 40], [92, 18], [92, -40], [-104, -40]];
-  for (let i = 0; i < wall.length - 1; i++) {
-    const [a, b] = [wall[i], wall[i + 1]];
-    if (i === 2) { const g0 = 0.5 - 9 / Math.hypot(b[0] - a[0], b[1] - a[1]), g1 = 1 - g0, lp = (t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
-      for (const [s, e] of [[0, g0], [g1, 1]]) { const [x1, z1] = lp(s), [x2, z2] = lp(e); segBox(M.stone, x1, z1, x2, z2, 1.9, 0.45); segBox(M.wood, x1, z1, x2, z2, 0.14, 0.5, 1.95); } continue; }
-    segBox(M.stone, a[0], a[1], b[0], b[1], 1.9, 0.45); segBox(M.wood, a[0], a[1], b[0], b[1], 0.14, 0.5, 1.95);
+  for (let i = 0; i < 40; i++) { roadCurve.getPointAt(i / 40, P); roadCurve.getTangentAt(i / 40, T); const s = Math.hypot(P.x + T.z * 12, P.z - T.x * 12) > Math.hypot(P.x - T.z * 12, P.z + T.x * 12) ? 12 : -12; addTree(P.x + T.z * s, P.z - T.x * s, 1.2 + rand() * 0.4); }
+  // compound wall with a dense tree border just inside it (dark green ring on the plan)
+  const gateSeg = 5;
+  for (let i = 0; i < PLOT.length; i++) {
+    const a = PLOT[i], b = PLOT[(i + 1) % PLOT.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const cut = i === gateSeg ? [[0, 0.5 - 5 / L], [0.5 + 5 / L, 1]] : [[0, 1]];
+    for (const [s, e] of cut) { const p = (t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], [x1, z1] = p(s), [x2, z2] = p(e);
+      segBox(M.stone, x1, z1, x2, z2, 1.9, 0.4); segBox(M.wood, x1, z1, x2, z2, 0.14, 0.46, 1.95); }
+    if (i === gateSeg || (i >= 3 && i <= 4)) continue;
+    const cx = PLOT.reduce((s, p) => s + p[0], 0) / PLOT.length, cz = PLOT.reduce((s, p) => s + p[1], 0) / PLOT.length;
+    for (let d = 2; d < L - 1; d += 4.2) { const t = d / L, x = a[0] + (b[0] - a[0]) * t, z = a[1] + (b[1] - a[1]) * t, k = 0.9 / Math.hypot(cx - x, cz - z); addTree(x + (cx - x) * k, z + (cz - z) * k, 0.9 + rand() * 0.35); }
   }
-  const gate = grp(79, 0, 29, Math.atan2(22, 26));                   // white portal, timber block, sign: as in the brochure
-  for (const x of [-6.8, 6.8]) box(gate, M.white, 1.6, 6.2, 2.4, x, 3.1, 0);
-  box(gate, M.white, 15.2, 2.6, 2.8, 0, 7.5, 0, { round: 0.1 }); box(gate, M.wood, 3.4, 6.2, 2.4, 9.4, 3.1, 0);
-  box(gate, M.charcoal, 10.9, 2.4, 0.08, 0, 7.5, 1.42, { cast: false });
-  const sg = new THREE.Mesh(new THREE.PlaneGeometry(10.5, 2.6), new THREE.MeshBasicMaterial({ map: signTex('SIGNIFA', 'SIGNATURE'), transparent: true })); sg.position.set(0, 7.5, 1.47); gate.add(sg);
-  box(gate, M.red, 5.2, 0.12, 0.12, -3.4, 1.05, 2.0); box(gate, M.white, 3, 2.8, 3, -11, 1.4, -5); box(gate, M.facadeGlass, 3.05, 1.2, 3.05, -11, 1.7, -5, { cast: false });
-  cyl(ext, M.stone, 3.2, 3.4, 0.6, 70, 0.3, 24, 32); cyl(ext, M.water, 2.9, 2.9, 0.1, 70, 0.64, 24, 32); cyl(ext, M.rail, 0.15, 0.3, 2.4, 70, 1.8, 24, 10);  // 02 water body
-  roadCars.push([car(ext, 0, 0, 0, M.carRed), 11, 0.1, -4.5], [car(ext, 0, 0, 0, M.carGrey), -9, 0.45, 4.5], [car(ext, 0, 0, 0, M.carWhite), 12, 0.7, -4.5], [car(ext, 0, 0, 0, M.carBlue), -10, 0.85, 4.5]);
+  const [ga, gb] = [PLOT[gateSeg], PLOT[gateSeg + 1]], gx = (ga[0] + gb[0]) / 2, gz = (ga[1] + gb[1]) / 2;
+  const gate = grp(gx, 0, gz, Math.atan2(gb[1] - ga[1], gb[0] - ga[0]) * -1);   // white portal, timber block and sign, as in the brochure
+  for (const x of [-5.4, 5.4]) box(gate, M.white, 1.3, 5.6, 2, x, 2.8, 0);
+  box(gate, M.white, 12.2, 2.2, 2.4, 0, 6.6, 0, { round: 0.1 }); box(gate, M.wood, 2.6, 5.6, 2, -7.4, 2.8, 0);
+  box(gate, M.charcoal, 9, 2, 0.08, 0, 6.6, 1.22, { cast: false });
+  const sg = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 2.15), new THREE.MeshBasicMaterial({ map: signTex('SIGNIFA', 'SIGNATURE'), transparent: true })); sg.position.set(0, 6.6, 1.27); gate.add(sg);
+  for (let i = 0; i < 6; i++) box(gate, i % 2 ? M.white : M.red, 0.9, 0.1, 0.1, -2.25 + i * 0.9, 1.05, 1.6);
+  box(gate, M.white, 2.6, 2.6, 2.6, 7.6, 1.3, -3); box(gate, M.facadeGlass, 2.65, 1.1, 2.65, 7.6, 1.6, -3, { cast: false });
+  const [wx, wz] = I(455, 1325);                                   // 02 water body: a round fountain pool at the gate
+  cyl(ext, M.stone, 2.4, 2.6, 0.55, wx, 0.27, wz, 32); cyl(ext, M.water, 2.15, 2.15, 0.1, wx, 0.58, wz, 32); cyl(ext, M.stone, 0.5, 0.7, 0.9, wx, 0.8, wz, 16); cyl(ext, M.water, 0.42, 0.42, 0.08, wx, 1.27, wz, 16);
+  roadCars.push([car(ext, 0, 0, 0, M.carRed), 11, 0.1, -3.4], [car(ext, 0, 0, 0, M.carGrey), -9, 0.45, 3.4], [car(ext, 0, 0, 0, M.carWhite), 12, 0.7, -3.4], [car(ext, 0, 0, 0, M.carBlue), -10, 0.85, 3.4]);
 
-  // the tower: 23 flats per floor in three columns of wings, joined by corridors
+  // the tower: blocks 07 to 23 traced from the plan, joined by corridors on every floor
   const bodyH = FLOORS * FH, cy = FH + bodyH / 2;
   const B = { bands: [], cols: [], slabs: [], rails: [], clad: [], greens: [], tops: [], coves: [], acs: [], sol: [], corr: [], par: [] };
   const balc = (cx, cz, alongX, w, nx, nz, f) => {
-    const st = f % 2 ? 0.6 : -0.6, y = f * FH + 0.13, ox = cx + (alongX ? st : nx * 0.95), oz = cz + (alongX ? nz * 0.95 : st);
+    const st = f % 2 ? 0.5 : -0.5, y = f * FH + 0.13, ox = cx + (alongX ? st : nx * 0.95), oz = cz + (alongX ? nz * 0.95 : st);
     const W = alongX ? w : 1.9, D = alongX ? 1.9 : w, ex = (k) => [cx + (alongX ? st : nx * k), cz + (alongX ? nz * k : st)];
     B.slabs.push([ox, y, oz, W, 0.26, D]);
     const [rx, rz] = ex(1.86); B.rails.push([rx, y + 0.62, rz, alongX ? w - 0.1 : 0.05, 1.0, alongX ? 0.05 : w - 0.1]); B.tops.push([rx, y + 1.14, rz, alongX ? w - 0.1 : 0.07, 0.05, alongX ? 0.07 : w - 0.1]);
     B.coves.push([rx, y - 0.15, rz, alongX ? w : 0.05, 0.03, alongX ? 0.05 : w]);
     if ((f + Math.round(cx / 3 + cz / 3)) % 3 === 0) { const [qx, qz] = ex(0.08); B.clad.push([qx, y + 1.45, qz, alongX ? w * 0.92 : 0.14, 2.6, alongX ? 0.14 : w * 0.92]); }
-    if ((f + Math.round(cx / 5 + cz / 5)) % 2 === 0) { const [gx, gz] = ex(1.55); B.greens.push([gx + (alongX ? -w * 0.32 : 0), y + 0.42, gz + (alongX ? 0 : -w * 0.32), 0.6, 0.5, 0.45]); }
+    if ((f + Math.round(cx / 5 + cz / 5)) % 2 === 0) { const [gx2, gz2] = ex(1.55); B.greens.push([gx2 + (alongX ? -w * 0.32 : 0), y + 0.42, gz2 + (alongX ? 0 : -w * 0.32), 0.6, 0.5, 0.45]); }
     if ((f * 7 + Math.round(cx * 3 + cz)) % 5 === 0) { const [ax, az] = ex(0.45); B.acs.push([ax + (alongX ? w * 0.36 : 0), y + 0.42, az + (alongX ? 0 : w * 0.36), alongX ? 0.8 : 0.32, 0.55, alongX ? 0.32 : 0.8]); }
   };
-  const BLOCKS = [];
-  const block = (no, x0, x1, z0, z1, faces) => {
-    const w = x1 - x0, d = z1 - z0, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2; BLOCKS.push({ no, x0, x1, z0, z1, cx, cz });
+  const block = (no, px0, px1, py0, py1, faces, parked) => {
+    const [x0, z0] = I(px0, py0), [x1, z1] = I(px1, py1);
+    const w = x1 - x0, d = z1 - z0, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
     const bm = new THREE.Mesh(tiledBox(w - 0.6, bodyH, d - 0.6), [M.windows, M.windows, M.plaster, M.plaster, M.windows, M.windows]);
     bm.position.set(cx, cy, cz); bm.castShadow = bm.receiveShadow = true; ext.add(bm);
     for (let f = 1; f <= FLOORS + 1; f++) B.bands.push([cx, f * FH, cz, w + 0.5, 0.36, d + 0.5]);
-    for (const px of [x0 + 1.5, x1 - 1.5]) for (const pz of [z0 + 1.5, z1 - 1.5]) B.cols.push([px, FH / 2, pz, 0.7, FH, 0.7]);
+    for (const px of [x0 + 1.2, x1 - 1.2]) for (const pz of [z0 + 1.2, z1 - 1.2]) B.cols.push([px, FH / 2, pz, 0.6, FH, 0.6]);
     for (const fc of faces) {
       const alongX = fc === 'w' || fc === 'e', len = alongX ? w : d, n = Math.max(1, Math.round(len / 5.4)), bw = len / n;
       const nx = fc === 'n' ? -1 : fc === 's' ? 1 : 0, nz = fc === 'w' ? -1 : fc === 'e' ? 1 : 0;
       const fx = fc === 'n' ? x0 : fc === 's' ? x1 : 0, fz = fc === 'w' ? z0 : fc === 'e' ? z1 : 0;
       for (let f = 1; f <= FLOORS; f++) for (let i = 0; i < n; i++) balc(alongX ? x0 + bw * (i + 0.5) : fx, alongX ? fz : z0 + bw * (i + 0.5), alongX, bw - 0.5, nx, nz, f);
       const H = TOP + 3, ends = alongX ? [[x0 + 0.4, fz + nz * 2.3], [x1 - 0.4, fz + nz * 2.3]] : [[fx + nx * 2.3, z0 + 0.4], [fx + nx * 2.3, z1 - 0.4]];
-      for (const [ex2, ez] of ends) box(ext, M.wood, 0.8, H, 0.8, ex2, H / 2, ez);
-      box(ext, M.wood, alongX ? w : 0.8, 0.9, alongX ? 0.8 : d, alongX ? cx : fx + nx * 2.3, H, alongX ? fz + nz * 2.3 : cz);
+      for (const [ex2, ez] of ends) box(ext, M.wood, 0.7, H, 0.7, ex2, H / 2, ez);
+      box(ext, M.wood, alongX ? w : 0.7, 0.8, alongX ? 0.7 : d, alongX ? cx : fx + nx * 2.3, H, alongX ? fz + nz * 2.3 : cz);
     }
-    for (let x = x0 + 1.6; x < x1 - 1; x += 2.1) for (const z of [cz - 2, cz + 0.2]) B.sol.push([x, TOP + 0.6, z, 1.9, 0.05, 1.7]);
-    car(ext, cx - 2.5, cz, 0, M.carWhite); car(ext, cx + 2.5, cz, 0, M.carGrey);
+    for (let x = x0 + 1.4; x < x1 - 1; x += 2.1) for (const z of [cz - 1.8, cz + 0.2]) B.sol.push([x, TOP + 0.6, z, 1.9, 0.05, 1.7]);
+    if (parked) car(ext, cx, cz, 0, M.carWhite);
   };
-  [['07', -53, -41], ['08', -38, -26], ['09', -23, -12], ['10', -10, 3], ['11', 6, 17], ['12', 20, 32], ['13', 35, 47]].forEach(([n, a, b]) => block(n, a, b, -22, -10, ['w']));
-  [['22', -53, -38], ['21', -32, -20], ['17', -4, 8]].forEach(([n, a, b]) => block(n, a, b, -7, 7, ['n', 's']));
-  [['23', -53, -37], ['20', -33, -21], ['19', -17, -6], ['18', -3, 8], ['16', 12, 24], ['15', 27, 37], ['14', 40, 53]].forEach(([n, a, b]) => block(n, a, b, 10, 24, ['e']));
-  // 6'6" corridors on every floor: two spines and two cross links, glass parapets on the open sides
-  const corridor = (x0, x1, z0, z1) => { const alongX = x1 - x0 > z1 - z0;
+  block('22', 310, 378, 448, 560, ['n', 'w']); block('23', 403, 492, 440, 555, ['n', 'e'], true);
+  block('21', 315, 402, 585, 678, ['n']); block('20', 418, 500, 578, 672, ['e']);
+  block('07', 150, 298, 620, 685, ['w', 'n'], true); block('08', 155, 300, 698, 765, ['w']); block('09', 163, 305, 785, 850, ['w']);
+  block('19', 378, 500, 690, 752, ['e']); block('18', 380, 498, 778, 842, ['e']);
+  block('10', 180, 270, 868, 980, ['w']); block('17', 310, 380, 862, 975, ['n', 's']); block('16', 405, 498, 860, 975, ['e']);
+  block('11', 190, 300, 1003, 1070, ['w']); block('15', 348, 498, 998, 1068, ['e']);
+  block('12', 203, 328, 1085, 1140, ['w']); block('14', 345, 498, 1085, 1170, ['e'], true); block('13', 222, 332, 1168, 1235, ['w'], true);
+  const corridor = (px0, px1, py0, py1) => { const [x0, z0] = I(px0, py0), [x1, z1] = I(px1, py1), alongX = x1 - x0 > z1 - z0;
     for (let f = 1; f <= FLOORS + 1; f++) { B.corr.push([(x0 + x1) / 2, f * FH, (z0 + z1) / 2, x1 - x0, 0.3, z1 - z0]);
       if (f <= FLOORS) for (const s of [0, 1]) B.par.push(alongX ? [(x0 + x1) / 2, f * FH + 0.6, s ? z1 : z0, x1 - x0, 0.9, 0.05] : [s ? x1 : x0, f * FH + 0.6, (z0 + z1) / 2, 0.05, 0.9, z1 - z0]); } };
-  corridor(-53, 47, -10, -7); corridor(-53, 53, 7, 10); corridor(-36, -32, -7, 7); corridor(8, 12, -7, 7);
-  for (const [x, z] of [[-35, -8.5], [10, 8.5]]) { box(ext, M.charcoal, 4.2, TOP + 3.2, 4.2, x, (TOP + 3.2) / 2, z); box(ext, M.facadeGlass, 0.06, TOP - 1, 2.4, x + 2.12, (TOP + 2) / 2, z, { cast: false }); }
+  corridor(298, 315, 600, 1240); corridor(380, 405, 448, 1170); corridor(315, 405, 562, 585);
+  for (const py of [712, 830]) { const [x, z] = I(355, py); box(ext, M.charcoal, 3, TOP + 3.2, 3, x, (TOP + 3.2) / 2, z); box(ext, M.facadeGlass, 3.04, TOP - 1, 1.6, x, (TOP + 2) / 2, z, { cast: false }); }
   inst(unitBox, M.white, B.bands); inst(unitBox, M.white, B.cols); inst(unitBox, M.white, B.slabs); inst(unitBox, M.white, B.corr);
   inst(unitBox, M.rail, B.rails, false); inst(unitBox, M.rail, B.par, false); inst(unitBox, M.chrome, B.tops, false); inst(unitBox, M.cove, B.coves, false);
   inst(unitBox, M.ceramic, B.acs); inst(unitBox, M.wood, B.clad); inst(blobGeo, M.leaf, B.greens); inst(unitBox, M.solar, B.sol);
-  for (const z of [-16, 17]) { box(ext, M.leaf2, 0.2, bodyH - 1, 10, -53.2, FH + bodyH / 2, z, { cast: false });
-    const gw = []; for (let i = 0; i < 36; i++) gw.push([-53.35, FH + 0.5 + rand() * (bodyH - 2), z - 4.6 + rand() * 9.2, 0.25, 0.4, 0.4]); inst(blobGeo, M.leaf, gw); }
-  // residents lobby on the south face of flat 14, under a deep canopy
-  box(ext, M.facadeGlass, 0.1, FH - 0.3, 11, 53.1, FH / 2, 17, { cast: false }); box(ext, M.wood, 1.4, FH - 0.3, 3.4, 52.4, FH / 2, 13.4);
-  box(ext, M.white, 8.2, 0.42, 13, 57.4, FH + 0.18, 17, { round: 0.12 }); box(ext, M.cove, 0.2, 0.04, 11.4, 61.3, FH - 0.04, 17, { cast: false });
-  for (const s of [-1, 1]) cyl(ext, M.charcoal, 0.2, 0.2, FH, 60.8, FH / 2, 17 + s * 5.6, 12);
-  { const s = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 1.4), new THREE.MeshBasicMaterial({ map: signTex("SIGNATURE", "RESIDENTS LOBBY"), transparent: true })); s.position.set(61.55, FH + 0.95, 17); s.rotation.y = Math.PI / 2; ext.add(s); }
-  car(ext, 59, 21.5, 0, M.carWhite);
-  FL.set(57, 0, 17);
+  // residents lobby on the south face of flat 14, a deep canopy over the drive way
+  { const [lx] = I(0, 1170), lz = I(420, 0)[1];
+    box(ext, M.facadeGlass, 0.1, FH - 0.3, 8, lx + 0.05, FH / 2, lz, { cast: false }); box(ext, M.wood, 1.2, FH - 0.3, 2.4, lx - 0.5, FH / 2, lz - 5);
+    box(ext, M.white, 6.4, 0.42, 10, lx + 3.2, FH + 0.18, lz, { round: 0.12 }); box(ext, M.cove, 0.2, 0.04, 9, lx + 6.2, FH - 0.04, lz, { cast: false });
+    for (const s of [-1, 1]) cyl(ext, M.charcoal, 0.18, 0.18, FH, lx + 5.8, FH / 2, lz + s * 4.2, 12);
+    const s = new THREE.Mesh(new THREE.PlaneGeometry(5, 1.25), new THREE.MeshBasicMaterial({ map: signTex('SIGNATURE', 'RESIDENTS LOBBY'), transparent: true })); s.position.set(lx + 6.45, FH + 0.95, lz); s.rotation.y = Math.PI / 2; ext.add(s);
+    FL.set(lx + 3, 0, lz); }
 
-  // 03 swimming pool: angled pool sunk into a raised teak deck, glass balustrade, cabana, palms
-  const poolPts = [[68, -21.5], [84, -23.5], [86.5, -8], [70.5, -5.5]];
-  const deckShape = new THREE.Shape([[63, -29], [91, -29], [91, -1], [63, -1]].map(([x, z]) => new THREE.Vector2(x, z)));
-  deckShape.holes.push(new THREE.Path(poolPts.map(([x, z]) => new THREE.Vector2(x, z))));
+  // 03 swimming pool: the trapezoid from the plan with a kids' corner, on a teak deck; 04 changing rooms; 05 park
+  const poolPts = [[240, 1312], [336, 1310], [300, 1396], [258, 1401]].map(([a, b]) => I(a, b));
+  const deckPts = [[226, 1298], [352, 1296], [306, 1416], [248, 1421]].map(([a, b]) => I(a, b));
+  const v2 = (pts) => pts.map(([x, z]) => new THREE.Vector2(x, z));
+  const deckShape = new THREE.Shape(v2(deckPts)); deckShape.holes.push(new THREE.Path(v2(poolPts)));
   const deckGeo = new THREE.ExtrudeGeometry(deckShape, { depth: PH, bevelEnabled: false }); deckGeo.rotateX(Math.PI / 2); deckGeo.translate(0, PH, 0);
   const deck = new THREE.Mesh(deckGeo, [M.deck, M.stone]); deck.castShadow = deck.receiveShadow = true; ext.add(deck);
-  const poolShape = new THREE.Shape(poolPts.map(([x, z]) => new THREE.Vector2(x, z)));
-  const pf = new THREE.Mesh(new THREE.ShapeGeometry(poolShape).rotateX(Math.PI / 2), M.poolFloor); pf.position.y = 0.12; ext.add(pf);
-  const cau = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(200,255,255,.6)'; g.lineWidth = 2;
-    for (let i = 0; i < 40; i++) { g.beginPath(); let x = rand() * w, y = rand() * h; g.moveTo(x, y); for (let k = 0; k < 4; k++) { x += (rand() - 0.5) * 60; y += (rand() - 0.5) * 60; g.quadraticCurveTo(x + 20, y - 20, x, y); } g.stroke(); } }, true);
-  cau.repeat.set(0.18, 0.18);
-  M.poolWater = new THREE.MeshPhysicalMaterial({ color: 0x1EA9C4, roughness: 0.03, clearcoat: 1, transparent: true, opacity: 0.8, emissive: 0xBFF6FF, emissiveMap: cau, emissiveIntensity: 0.3, side: THREE.DoubleSide });
-  const pw = new THREE.Mesh(new THREE.ShapeGeometry(poolShape).rotateX(Math.PI / 2), M.poolWater); pw.position.y = PH - 0.14; pw.renderOrder = 2; ext.add(pw);
-  anims.push((t) => cau.offset.set(Math.sin(t * 0.3) * 0.05 + t * 0.01, Math.cos(t * 0.27) * 0.05));
-  for (let i = 0; i < poolPts.length; i++) { const [a, b] = [poolPts[i], poolPts[(i + 1) % 4]]; segBox(M.white2, a[0], a[1], b[0], b[1], 0.06, 0.5, PH + 0.03); }
-  for (let i = 0; i < 4; i++) box(ext, M.stone, 0.42, (i + 1) * PH / 4, 7, 61.5 + i * 0.42, (i + 1) * PH / 8, -15);
-  for (const [w, d, x, z] of [[28, 0.04, 77, -28.98], [28, 0.04, 77, -1.02], [0.04, 28, 90.98, -15], [0.04, 10, 63.02, -24], [0.04, 10, 63.02, -6]]) {
-    box(ext, M.rail, w, 1.0, d, x, PH + 0.5, z, { cast: false }); box(ext, M.steel, Math.max(w, 0.06), 0.05, Math.max(d, 0.06), x, PH + 1.02, z); }
-  for (let i = 0; i < 5; i++) {
-    const q = grp(89, PH, -20 + i * 2.8, -Math.PI / 2);
-    box(q, M.white2, 0.7, 0.28, 1.4, 0, 0.2, 0.25, { round: 0.05 }); box(q, M.linen, 0.62, 0.08, 1.3, 0, 0.37, 0.27, { round: 0.04 });
-    box(q, M.linen, 0.62, 0.08, 0.8, 0, 0.62, -0.6, { round: 0.04 }).rotation.x = -0.8;
-    if (i % 2 === 0) umbrella(90.2, PH, -18.6 + i * 2.8);
-  }
-  { const q = grp(77, PH, -26.5);
-    for (const [p, r] of [[-2.4, -1.8], [2.4, -1.8], [-2.4, 1.8], [2.4, 1.8]]) box(q, M.wood, 0.2, 2.8, 0.2, p, 1.4, r);
-    for (let i = 0; i < 8; i++) box(q, M.wood, 5.2, 0.1, 0.2, 0, 2.85, -1.75 + i * 0.5);
-    box(q, M.white2, 2.4, 0.45, 2.2, 0, 0.23, 0, { round: 0.08 }); box(q, M.linen, 2.3, 0.15, 2.1, 0, 0.52, 0, { round: 0.06 });
-    for (let i = 0; i < 4; i++) box(q, [M.fabricRust, M.fabricSage, M.linen, M.fabricRust][i], 0.5, 0.4, 0.14, -0.8 + i * 0.53, 0.75, -0.95, { round: 0.06 }); }
-  for (const [x, z] of [[64.2, -27.8], [89.8, -27.8], [64.2, -2.2], [89.8, -2.2]]) { box(ext, M.charcoal, 1.3, 0.8, 1.3, x, PH + 0.4, z); palm(ext, x, z, 6 + rand() * 2, 0.5).position.y = PH + 0.6; }
-  box(ext, M.white, 12, 3.2, 4.2, 77, 1.6, -34); box(ext, M.wood, 12.4, 0.5, 4.6, 77, 3.4, -34);          // 04 dress changing rooms
-  for (let i = 0; i < 4; i++) box(ext, M.teak, 0.9, 2.1, 0.06, 72.5 + i * 3, 1.05, -31.87);
-  for (const [x, z] of [[88, -36], [66, -36], [88, 8], [84, 14]]) palm(ext, x, z, 9 + rand() * 2, 0.7);       // 05 park
-  for (const [x, z] of [[72, 8], [78, 4], [64, 10]]) tree(ext, x, z, 1.4);
-  bench(74, 2.5, Math.PI); bench(80, 2.5, Math.PI);
+  const tileTex = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#1F7FA0'; g.fillRect(0, 0, w, h);
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { g.fillStyle = `hsl(${193 + rand() * 8},${58 + rand() * 12}%,${29 + rand() * 9}%)`; g.fillRect(x * 16 + 1, y * 16 + 1, 14, 14); } }, true);
+  tileTex.repeat.set(0.5, 0.5);
+  const poolTile = new THREE.MeshStandardMaterial({ map: tileTex, roughness: 0.35, side: THREE.DoubleSide, emissive: 0xBFF6FF, emissiveIntensity: 0.24 });
+  const shapeAt = (pts, mat, y) => { const m = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(v2(pts))).rotateX(Math.PI / 2), mat); m.position.y = y; ext.add(m); return m; };
+  const cau = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(200,255,255,.55)'; g.lineWidth = 2.2;
+    for (let i = 0; i < 46; i++) { g.beginPath(); let x = rand() * w, y = rand() * h; g.moveTo(x, y); for (let k = 0; k < 4; k++) { x += (rand() - 0.5) * 50; y += (rand() - 0.5) * 50; g.quadraticCurveTo(x + 16, y - 16, x, y); } g.stroke(); } }, true);
+  cau.repeat.set(0.3, 0.3); poolTile.emissiveMap = cau;
+  shapeAt(poolPts, poolTile, 0.05);
+  for (let i = 0; i < 4; i++) { const [a, b] = [poolPts[i], poolPts[(i + 1) % 4]], l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(l, PH), poolTile); wall.position.set((a[0] + b[0]) / 2, PH / 2, (a[1] + b[1]) / 2); wall.rotation.y = -Math.atan2(b[1] - a[1], b[0] - a[0]); ext.add(wall);
+    segBox(M.white2, a[0], a[1], b[0], b[1], 0.07, 0.45, PH + 0.035); segBox(M.black, a[0], a[1], b[0], b[1], 0.12, 0.04, PH - 0.22); }
+  // waves: a tiling height field turned into a normal map, scrolled two ways (normal + clearcoat normal)
+  const waveTex = canvasTex(256, 256, (g, w, h) => {
+    const img = g.createImageData(w, h), H = (x, y) => { let v = 0; for (const [kx, ky, a, ph] of [[2, 1, 1, 0.3], [-1, 3, 0.7, 1.1], [4, -2, 0.45, 2.0], [5, 5, 0.25, 0.7], [-7, 3, 0.18, 2.6]]) v += a * Math.sin(2 * Math.PI * (kx * x + ky * y) / w + ph); return v; };
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const dx = H(x + 1, y) - H(x - 1, y), dy = H(x, y + 1) - H(x, y - 1), l = Math.hypot(dx * 3, dy * 3, 1), i = (y * w + x) * 4;
+      img.data[i] = (-dx * 3 / l * 0.5 + 0.5) * 255; img.data[i + 1] = (-dy * 3 / l * 0.5 + 0.5) * 255; img.data[i + 2] = (1 / l * 0.5 + 0.5) * 255; img.data[i + 3] = 255; }
+    g.putImageData(img, 0, 0); }, true);
+  waveTex.colorSpace = THREE.NoColorSpace; waveTex.repeat.set(0.28, 0.28);
+  const wave2 = waveTex.clone(); wave2.repeat.set(0.5, 0.5); wave2.needsUpdate = true;
+  M.poolWater = new THREE.MeshPhysicalMaterial({ color: 0x0C6E8C, roughness: 0.04, metalness: 0.05, transparent: true, opacity: 0.84, side: THREE.DoubleSide,
+    normalMap: waveTex, normalScale: new THREE.Vector2(0.55, 0.55), clearcoat: 1, clearcoatRoughness: 0.03, clearcoatNormalMap: wave2, clearcoatNormalScale: new THREE.Vector2(0.4, 0.4),
+    emissive: 0x2FC4E0, emissiveIntensity: 0.08, envMapIntensity: 1.6, depthWrite: false });
+  const pw = shapeAt(poolPts, M.poolWater, PH - 0.12); pw.renderOrder = 2;
+  anims.push((t) => { waveTex.offset.set(t * 0.012, t * 0.007); wave2.offset.set(-t * 0.009, t * 0.014); cau.offset.set(Math.sin(t * 0.3) * 0.05 + t * 0.01, Math.cos(t * 0.27) * 0.05); });
+  { const [a, b] = [I(296, 1311), I(331, 1346)];                    // the white line on the plan: a low wall closing off the kids' corner
+    segBox(M.white2, a[0], a[1], b[0], b[1], PH - 0.1, 0.3, (PH - 0.1) / 2); }
+  { const [x, z] = I(300, 1290); for (let i = 0; i < 4; i++) box(ext, M.stone, 0.4, (i + 1) * PH / 4, 3, x - 1.6 + i * 0.4, (i + 1) * PH / 8, z); }   // steps up to the deck
+  for (const [px, py] of [[230, 1300], [348, 1298], [304, 1414], [250, 1419]]) { const [x, z] = I(px, py); box(ext, M.charcoal, 1, 0.6, 1, x, PH + 0.3, z); palm(ext, x, z, 5.5 + rand() * 2, 0.4).position.y = PH + 0.5; }
+  for (let i = 0; i < 5; i++) { const [x, z] = I(372 + i * 22, 1328);  // sun loungers on the park lawn, facing the pool
+    const q = grp(x + i * 0.4, 0, z, Math.PI * 0.62); box(q, M.white2, 0.7, 0.28, 1.4, 0, 0.2, 0.25, { round: 0.05 }); box(q, M.linen, 0.62, 0.08, 1.3, 0, 0.37, 0.27, { round: 0.04 });
+    box(q, M.linen, 0.62, 0.08, 0.8, 0, 0.62, -0.6, { round: 0.04 }).rotation.x = -0.8; if (i % 2 === 0) umbrella(x + i * 0.4 + 0.8, 0, z + 0.9); }
+  { const [x, z] = I(232, 1400), q = grp(x, 0, z, -0.28);           // 04 dress changing rooms along the west wall
+    box(q, M.white, 6.4, 3, 3.2, 0, 1.5, 0); box(q, M.wood, 6.8, 0.4, 3.6, 0, 3.15, 0); for (let i = 0; i < 3; i++) box(q, M.teak, 0.9, 2.1, 0.06, -2 + i * 2, 1.05, 1.62); }
+  for (const [px, py] of [[380, 1385], [420, 1352], [445, 1405], [365, 1440], [475, 1378], [410, 1440], [215, 1330]]) { const [x, z] = I(px, py); addTree(x, z, 1.1 + rand() * 0.4); }
+  { const [x, z] = I(205, 1318); bench(x, z + 0.5, Math.PI / 2); }
 
-  // 07 EV charging point, north-west: solar canopy, superchargers, Cybertrucks
+  // 07 EV charging point on the west edge, beside the club house: solar canopy, superchargers, Cybertrucks
   const poly = (pts, depth) => { const s = new THREE.Shape(); pts.forEach(([x, y], i) => (i ? s.lineTo(x, y) : s.moveTo(x, y))); return new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: false }).translate(0, 0, -depth / 2); };
   const ctBody = poly([[2.85, 0.42], [2.85, 0.98], [2.72, 1.1], [0.25, 1.9], [-2.85, 1.3], [-2.85, 0.42]], 2.0);
   const ctGlass = poly([[1.95, 1.33], [0.25, 1.915], [-1.6, 1.545], [-1.6, 1.33]], 2.04);
   const cyberTruck = (x, z, ry) => { const q = grp(x, 0, z, ry);
     const b = new THREE.Mesh(ctBody, M.steel); b.castShadow = b.receiveShadow = true; q.add(b); q.add(new THREE.Mesh(ctGlass, M.black));
-    box(q, M.black, 5.72, 0.3, 2.06, 0, 0.55, 0, { cast: false });
-    box(q, M.lampGlow, 0.03, 0.05, 1.9, 2.86, 1.0, 0, { cast: false }); box(q, M.red, 0.03, 0.05, 1.9, -2.86, 1.24, 0, { cast: false });
-    for (const [wx, wz] of [[1.85, 0.93], [1.85, -0.93], [-1.9, 0.93], [-1.9, -0.93]]) {
-      cyl(q, M.black, 0.43, 0.43, 0.32, wx, 0.43, wz, 20).rotation.x = Math.PI / 2; cyl(q, M.steel, 0.3, 0.3, 0.34, wx, 0.43, wz, 6).rotation.x = Math.PI / 2; }
+    box(q, M.black, 5.72, 0.3, 2.06, 0, 0.55, 0, { cast: false }); box(q, M.lampGlow, 0.03, 0.05, 1.9, 2.86, 1.0, 0, { cast: false }); box(q, M.red, 0.03, 0.05, 1.9, -2.86, 1.24, 0, { cast: false });
+    for (const [wx2, wz2] of [[1.85, 0.93], [1.85, -0.93], [-1.9, 0.93], [-1.9, -0.93]]) { cyl(q, M.black, 0.43, 0.43, 0.32, wx2, 0.43, wz2, 20).rotation.x = Math.PI / 2; cyl(q, M.steel, 0.3, 0.3, 0.34, wx2, 0.43, wz2, 6).rotation.x = Math.PI / 2; }
     return q; };
-  const EZ = -31;
-  for (let i = 0; i < 4; i++) {
-    const x = -76 + i * 3.6;
-    box(ext, M.ev, 3.1, 0.03, 5.8, x, 0.09, EZ, { cast: false }); box(ext, M.line, 0.08, 0.035, 5.8, x - 1.6, 0.1, EZ, { cast: false });
-    if (i % 2 === 0) cyberTruck(x, EZ + 0.1, Math.PI / 2); else car(ext, x, EZ + 0.2, Math.PI, M.carWhite);
-    box(ext, M.white2, 0.42, 1.75, 0.28, x + 1.05, 0.88, EZ - 3.3, { round: 0.1 });
-    box(ext, M.ev, 0.05, 1.3, 0.3, x + 0.84, 0.95, EZ - 3.3, { cast: false }); box(ext, M.black, 0.3, 0.36, 0.02, x + 1.05, 1.35, EZ - 3.15, { cast: false });
-    ext.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(x + 1.05, 1.0, EZ - 3.15), new THREE.Vector3(x + 0.9, 0.35, EZ - 2.65), new THREE.Vector3(x + 0.4, 0.8, EZ - 2.3)]), 12, 0.035, 6), M.black));
+  const [EX] = I(0, 478), EZ = -24.2;
+  box(ext, M.asphalt, 12, 0.05, 7.4, EX + 4.2, 0.05, EZ, { cast: false });
+  for (let i = 0; i < 3; i++) {
+    const x = EX + i * 2.9 + 1.2;
+    box(ext, M.ev, 2.6, 0.03, 5.6, x, 0.09, EZ, { cast: false }); box(ext, M.line, 0.08, 0.035, 5.6, x - 1.35, 0.1, EZ, { cast: false });
+    if (i !== 1) cyberTruck(x, EZ + 0.3, -Math.PI / 2); else car(ext, x, EZ + 0.3, 0, M.carWhite);
+    box(ext, M.white2, 0.28, 1.75, 0.42, x + 0.9, 0.88, EZ - 3.1, { round: 0.1 }); box(ext, M.ev, 0.3, 1.3, 0.05, x + 0.9, 0.95, EZ - 2.88, { cast: false });
+    ext.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(x + 0.9, 1.0, EZ - 2.9), new THREE.Vector3(x + 0.7, 0.35, EZ - 2.5), new THREE.Vector3(x + 0.3, 0.8, EZ - 2.2)]), 12, 0.035, 6), M.black));
   }
-  for (const x of [-78, -63.2]) for (const z of [EZ - 3.8, EZ + 3.4]) box(ext, M.steel, 0.2, 3.6, 0.2, x, 1.8, z);
-  for (const z of [EZ - 3.8, EZ + 3.4]) box(ext, M.steel, 15.6, 0.18, 0.18, -70.6, 3.62, z);
-  const panels = []; for (let i = 0; i < 8; i++) for (let j = 0; j < 4; j++) panels.push([-77.4 + i * 1.95, 3.78 + j * 0.14, EZ - 3.0 + j * 1.9, 1.85, 0.05, 1.8]);
-  inst(unitBox, M.solar, panels); box(ext, M.cove, 15, 0.03, 0.1, -70.6, 3.52, EZ - 0.2, { cast: false });
-  sign('EV CHARGING', 'SOLAR POWERED', 4.8, 1.2, -70.6, 2.75, EZ + 3.45);
-  box(ext, M.white, 6, 3.4, 10, -64, 1.7, -16); box(ext, M.wood, 6.4, 0.4, 10.4, -64, 3.6, -16);                  // 08 guest rooms
-  for (let i = 0; i < 3; i++) { box(ext, M.teak, 0.06, 2.1, 0.9, -60.97, 1.05, -19.5 + i * 3.5); box(ext, M.facadeGlass, 0.06, 1.2, 1.4, -60.97, 1.9, -18 + i * 3.5, { cast: false }); }
-  box(ext, M.charcoal, 6, 2.2, 5, -98, 1.1, 34); sign('STP', '', 2, 0.8, -98, 1.4, 31.45);                      // 19 STP
+  for (const x of [EX - 0.4, EX + 9.2]) for (const z of [EZ - 3.5, EZ + 3.3]) box(ext, M.steel, 0.18, 3.5, 0.18, x, 1.75, z);
+  const panels = []; for (let i = 0; i < 5; i++) for (let j = 0; j < 4; j++) panels.push([EX + 0.6 + i * 1.95, 3.7 + j * 0.14, EZ - 2.9 + j * 1.9, 1.85, 0.05, 1.8]);
+  inst(unitBox, M.solar, panels);
+  sign('EV CHARGING', 'SOLAR POWERED', 4, 1, EX + 4.4, 2.7, EZ + 3.36);
+  { const [x0, z0] = I(150, 540), [x1, z1] = I(295, 590), cx = (x0 + x1) / 2;       // 08 guest rooms, four doors to the south
+    box(ext, M.white, x1 - x0, 3.3, z1 - z0, cx, 1.65, (z0 + z1) / 2); box(ext, M.wood, x1 - x0 + 0.4, 0.4, z1 - z0 + 0.4, cx, 3.5, (z0 + z1) / 2);
+    for (let i = 0; i < 4; i++) { const z = z0 + (z1 - z0) * (i + 0.5) / 4; box(ext, M.teak, 0.06, 2.1, 0.9, x1 + 0.03, 1.05, z - 0.9); box(ext, M.facadeGlass, 0.06, 1.2, 1.3, x1 + 0.03, 1.9, z + 0.7, { cast: false }); } }
+  { const [x, z] = I(520, 388); box(ext, M.charcoal, 3, 2.2, 5, x, 1.1, z); sign('STP', '', 1.6, 0.7, x, 1.4, z + 2.55); }  // 19 STP
+  for (let i = 0; i < 4; i++) { const [x, z] = I(95, 232 + i * 24);   // 11 working pods: glass cubes on the lawn
+    box(ext, M.white, 2.4, 0.15, 2.4, x, 0.08, z); box(ext, M.glass, 2.3, 2.3, 2.3, x, 1.3, z, { cast: false }); box(ext, M.white, 2.5, 0.18, 2.5, x, 2.5, z); box(ext, M.teak, 1.2, 0.05, 0.6, x, 0.75, z - 0.6); }
 
-  // 18 kids play area, east of the club house
-  const KX = -79, KZ = 8.5;
-  box(ext, M.rubber, 15, 0.06, 9.5, KX, 0.09, KZ, { cast: false }); box(ext, M.play, 6, 0.065, 4, KX - 3.5, 0.095, KZ + 1, { cast: false });
-  for (const [w, d, x, z] of [[15.3, 0.25, KX, KZ - 4.85], [15.3, 0.25, KX, KZ + 4.85], [0.25, 9.5, KX - 7.6, KZ], [0.25, 9.5, KX + 7.6, KZ]]) box(ext, M.wood, w, 0.3, d, x, 0.15, z);
+  // 18 kids play area, the long yellow strip east of the club house
+  const [KX, KZ] = I(292, 300);
+  box(ext, M.play, 18, 0.06, 7.6, KX, 0.09, KZ, { cast: false }); box(ext, M.rubber, 7, 0.065, 5, KX - 3.5, 0.095, KZ, { cast: false });
+  { const [ax, az] = I(292, 400); box(ext, M.play, 9, 0.06, 7.6, ax, 0.09, az, { cast: false }); }
+  for (const [w, d, x, z] of [[18.3, 0.25, KX, KZ - 3.9], [18.3, 0.25, KX, KZ + 3.9], [0.25, 7.8, KX - 9.1, KZ], [0.25, 7.8, KX + 9.1, KZ]]) box(ext, M.wood, w, 0.3, d, x, 0.15, z);
   const T0 = KX - 4.5, T1 = KZ;
   for (const [p, q] of [[-0.9, -0.9], [0.9, -0.9], [-0.9, 0.9], [0.9, 0.9]]) box(ext, M.blue, 0.14, 3.2, 0.14, T0 + p, 1.6, T1 + q);
   box(ext, M.wood, 2, 0.12, 2, T0, 1.5, T1);
   const roof = new THREE.Mesh(new THREE.ConeGeometry(1.6, 1.0, 4), M.red); roof.position.set(T0, 3.65, T1); roof.rotation.y = Math.PI / 4; roof.castShadow = true; ext.add(roof);
   for (const s of [-1, 1]) box(ext, M.ylw, 1.8, 0.7, 0.06, T0, 1.95, T1 + s * 0.93);
   for (let i = 0; i < 5; i++) box(ext, M.ylw, 0.06, 0.06, 1.6, T0 + 0.93, 0.3 + i * 0.3, T1);
-  box(ext, M.red, 0.6, 0.06, 3.0, T0, 0.78, T1 + 2.3).rotation.x = 0.52;
-  for (const s of [-1, 1]) box(ext, M.red, 0.05, 0.22, 3.0, T0 + s * 0.3, 0.88, T1 + 2.3).rotation.x = 0.52;
+  box(ext, M.red, 0.6, 0.06, 3.0, T0, 0.78, T1 + 2.1).rotation.x = 0.52;
+  for (const s of [-1, 1]) box(ext, M.red, 0.05, 0.22, 3.0, T0 + s * 0.3, 0.88, T1 + 2.1).rotation.x = 0.52;
   const hel = []; for (let i = 0; i <= 24; i++) { const a = (i / 24) * Math.PI * 1.6 + Math.PI; hel.push(new THREE.Vector3(T0 - 1.9 + Math.cos(a) * 1.1, 1.55 - (i / 24) * 1.25, T1 + Math.sin(a) * 1.1)); }
   ext.add(Object.assign(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(hel), 48, 0.36, 12), M.ylw), { castShadow: true }));
-  const SW0 = KX + 1.5, SW1 = KZ - 2.4, swings = [];
+  const SW0 = KX + 1.5, SW1 = KZ - 1.9, swings = [];
   for (const s of [-1, 1]) for (const t of [-1, 1]) box(ext, M.blue, 0.1, 2.8, 0.1, SW0 + s * 1.6, 1.35, SW1 + t * 0.55).rotation.x = -t * 0.2;
   box(ext, M.blue, 3.4, 0.12, 0.12, SW0, 2.65, SW1);
   for (const dx of [-0.7, 0.7]) { const pv = grp(SW0 + dx, 2.6, SW1); for (const s of [-1, 1]) box(pv, M.charcoal, 0.02, 2.05, 0.02, s * 0.22, -1.02, 0, { cast: false }); box(pv, M.red, 0.5, 0.05, 0.26, 0, -2.05, 0); swings.push(pv); }
   anims.push((t) => swings.forEach((p, i) => (p.rotation.x = Math.sin(t * 1.9 + i * 1.7) * 0.55)));
-  cyl(ext, M.ylw, 0.12, 0.2, 0.5, KX + 5, 0.3, KZ + 2.5, 10);
-  const ss = grp(KX + 5, 0.55, KZ + 2.5); box(ss, M.blue, 3.4, 0.08, 0.3, 0, 0, 0);
+  cyl(ext, M.ylw, 0.12, 0.2, 0.5, KX + 5.5, 0.3, KZ + 2, 10);
+  const ss = grp(KX + 5.5, 0.55, KZ + 2); box(ss, M.blue, 3.4, 0.08, 0.3, 0, 0, 0);
   for (const s of [-1, 1]) { box(ss, M.red, 0.32, 0.06, 0.32, s * 1.5, 0.05, 0); box(ss, M.ylw, 0.04, 0.3, 0.3, s * 1.22, 0.2, 0); }
   anims.push((t) => (ss.rotation.z = Math.sin(t * 1.4) * 0.22));
-  const mg = grp(KX + 5.4, 0, KZ - 2.2); cyl(mg, M.ylw, 1.1, 1.1, 0.12, 0, 0.32, 0, 24); cyl(mg, M.blue, 0.06, 0.06, 1.0, 0, 0.8, 0, 8);
+  const mg = grp(KX + 5.8, 0, KZ - 1.8); cyl(mg, M.ylw, 1.1, 1.1, 0.12, 0, 0.32, 0, 24); cyl(mg, M.blue, 0.06, 0.06, 1.0, 0, 0.8, 0, 8);
   for (let i = 0; i < 4; i++) box(mg, M.red, 0.05, 0.6, 0.05, Math.cos(i * Math.PI / 2) * 0.8, 0.65, Math.sin(i * Math.PI / 2) * 0.8);
   anims.push((t, s) => (mg.rotation.y += s * 0.8));
   const riders = [];
-  for (const [x, z, m] of [[KX - 0.6, KZ + 3, M.ylw], [KX + 1.6, KZ + 3.3, M.red]]) {
+  for (const [x, z, m] of [[KX - 0.6, KZ + 2.6, M.ylw], [KX + 1.6, KZ + 2.8, M.red]]) {
     const r = grp(x, 0.1, z); cyl(ext, M.charcoal, 0.1, 0.1, 0.45, x, 0.32, z, 10);
     const b = new THREE.Mesh(blobGeo, m); b.scale.set(0.3, 0.26, 0.55); b.position.y = 0.72; b.castShadow = true; r.add(b);
     const hd = new THREE.Mesh(blobGeo, m); hd.scale.setScalar(0.2); hd.position.set(0, 1.0, 0.45); r.add(hd);
     anims.push((t) => (r.rotation.x = Math.sin(t * 3 + x) * 0.12)); riders.push(r);
   }
   bench(KX - 3, KZ + 4.4, Math.PI); bench(KX + 3, KZ + 4.4, Math.PI);
-  tree(ext, KX - 8.5, KZ + 6, 1.5); tree(ext, KX + 9, KZ - 6, 1.4);
   Object.assign(playRefs, { swings, ss, mg, riders, T0, T1, KX, KZ });
+  for (const [px, py] of [[350, 230], [365, 300], [350, 370], [110, 340], [100, 400], [60, 150], [60, 300]]) { const [x, z] = I(px, py); addTree(x, z, 1.0 + rand() * 0.4); }
+  for (const [px, py, ry] of [[345, 215, -Math.PI / 2], [345, 250, -Math.PI / 2], [345, 395, -Math.PI / 2]]) { const [x, z] = I(px, py); bench(x, z, ry); }
 
-  // 16 shuttle court, 15 cricket practice net (north end), 20 half basketball court (courtyard)
-  box(ext, M.court, 7, 0.04, 14, -99, 0.1, -6, { cast: false });
-  inst(unitBox, M.line, [[-102.4, 0.13, -6, 0.08, 0.01, 13.6], [-95.6, 0.13, -6, 0.08, 0.01, 13.6], [-99, 0.13, -12.8, 6.9, 0.01, 0.08], [-99, 0.13, 0.8, 6.9, 0.01, 0.08], [-99, 0.13, -6, 6.9, 0.01, 0.06]], false);
-  for (const z of [-6]) for (const x of [-102.6, -95.4]) cyl(ext, M.charcoal, 0.04, 0.04, 1.55, x, 0.78, z, 6);
-  box(ext, M.net, 7.2, 0.76, 0.02, -99, 1.17, -6, { cast: false });
-  box(ext, M.trunk, 3, 0.04, 18, -99, 0.1, -27, { cast: false }); box(ext, M.net, 3.8, 3.4, 18, -99, 1.72, -27, { cast: false });
-  box(ext, M.courtOr, 13, 0.04, 13, -12, 0.12, 0, { cast: false }); box(ext, M.court, 4.9, 0.01, 5.8, -12, 0.15, -3.5, { cast: false });
-  cyl(ext, M.charcoal, 0.1, 0.1, 3.4, -12, 1.7, -6.8, 8); box(ext, M.line, 1.8, 1.05, 0.06, -12, 3.3, -6.35);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.23, 0.02, 6, 20), M.red); ring.rotation.x = Math.PI / 2; ring.position.set(-12, 3.05, -6.05); ext.add(ring);
+  // 16 shuttle court, 15 cricket practice net, 17 multipurpose terrace (north end)
+  { const [x0, z0] = I(150, 70), [x1, z1] = I(228, 105), cx = (x0 + x1) / 2 - 0.4, cz = (z0 + z1) / 2 - 0.9;
+    box(ext, M.court, 5.6, 0.04, 12, cx, 0.1, cz, { cast: false });
+    inst(unitBox, M.line, [[cx - 2.7, 0.13, cz, 0.06, 0.01, 11.8], [cx + 2.7, 0.13, cz, 0.06, 0.01, 11.8], [cx, 0.13, cz - 5.9, 5.5, 0.01, 0.06], [cx, 0.13, cz + 5.9, 5.5, 0.01, 0.06], [cx, 0.13, cz, 0.06, 0.01, 11.8]], false);
+    for (const x of [cx - 2.9, cx + 2.9]) cyl(ext, M.charcoal, 0.04, 0.04, 1.55, x, 0.78, cz, 6);
+    box(ext, M.net, 5.8, 0.76, 0.02, cx, 1.17, cz, { cast: false }); playRefs.court = [cx, cz]; }
+  { const [x0, z0] = I(235, 65), [x1, z1] = I(320, 100), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    box(ext, M.trunk, 3, 0.04, z1 - z0, cx, 0.1, cz, { cast: false }); box(ext, M.net, 3.8, 3.4, z1 - z0, cx, 1.72, cz, { cast: false }); }
+  { const [x0, z0] = I(130, 110), [x1, z1] = I(318, 195), cx = (x0 + x1) / 2;
+    box(ext, M.stone, x1 - x0, 0.1, z1 - z0, cx, 0.06, (z0 + z1) / 2, { cast: false });
+    const tab = []; for (let i = 0; i < 3; i++) for (let j = 0; j < 6; j++) tab.push([x0 + 1.6 + i * 2.6, 0.75, z0 + 1.4 + j * 1.6, 1.6, 0.06, 0.8]); inst(unitBox, M.teak, tab);
+    const sts = []; for (const t of tab) for (const s of [-1, 1]) sts.push([t[0] + s * 1.0, 0.45, t[2], 0.35, 0.06, 0.7]); inst(unitBox, M.wood, sts);
+    const cafe = [x0 + 1.8, x0 + 4.6, x0 + 7.4], cafeZ = z1 - 3.6;
+    for (const x of cafe) { cyl(ext, M.white2, 0.45, 0.45, 0.04, x, 0.76, cafeZ, 20); cyl(ext, M.charcoal, 0.04, 0.04, 0.72, x, 0.4, cafeZ, 6); umbrella(x, 0.1, cafeZ, 1.3); }
+    Object.assign(playRefs, { cafe, cafeZ }); }
+  // 14 gazebos: the two L-shaped pergolas at the top corners of the plan
+  const pergola = (px0, px1, py0, py1) => { const [x0, z0] = I(px0, py0), [x1, z1] = I(px1, py1), alongX = x1 - x0 > z1 - z0, L = alongX ? x1 - x0 : z1 - z0;
+    for (let d = 0; d <= L; d += 2.4) for (const s of [0, 1]) box(ext, M.white, 0.18, 2.7, 0.18, alongX ? x0 + d : (s ? x1 : x0), 1.35, alongX ? (s ? z1 : z0) : z0 + d);
+    for (let d = 0.3; d < L; d += 0.6) box(ext, M.pergola, alongX ? 0.12 : x1 - x0 + 0.4, 0.2, alongX ? z1 - z0 + 0.4 : 0.12, alongX ? x0 + d : (x0 + x1) / 2, 2.8, alongX ? (z0 + z1) / 2 : z0 + d);
+    box(ext, M.pergola, x1 - x0, 0.05, z1 - z0, (x0 + x1) / 2, 0.08, (z0 + z1) / 2, { cast: false }); };
+  pergola(70, 95, 80, 190); pergola(95, 140, 80, 105); pergola(330, 360, 55, 180); pergola(300, 330, 55, 80);
+  { const [x, z] = I(82, 150); bench(x, z, Math.PI / 2); bench(x + 3, z, Math.PI / 2); const [x2, z2] = I(345, 130); bench(x2, z2, -Math.PI / 2); bench(x2 + 3, z2, -Math.PI / 2); }
 
-  // club house: indoor games, gym, yoga / meditation, multipurpose hall, working pods; café deck facing the play area
-  const CX = -82, CZ = -15;
-  box(ext, M.stone, 25.6, 0.12, 15.6, CX, 0.06, CZ, { cast: false }); box(ext, M.deck, 24.6, 0.04, 14.6, CX, 0.14, CZ, { cast: false });
-  for (const [w, d, x, z] of [[25, 0.05, CX, CZ + 7.5], [0.05, 15, CX - 12.5, CZ], [0.05, 15, CX + 12.5, CZ]]) box(ext, M.glass, w, 3.7, d, x, 1.95, z, { cast: false });
-  for (let i = 0; i <= 8; i++) box(ext, M.frame, 0.08, 3.7, 0.1, CX - 12.5 + i * 3.125, 1.95, CZ + 7.5);
-  box(ext, M.wood, 25, 3.8, 0.3, CX, 1.9, CZ - 7.4); box(ext, M.mirror, 12, 2.2, 0.03, CX - 4, 1.5, CZ - 7.22, { cast: false });
-  box(ext, M.cove, 23, 0.04, 13, CX, 3.75, CZ, { cast: false });
-  const cu = new THREE.Mesh(tiledBox(26, 3.8, 16), [M.windows, M.windows, M.plaster, M.plaster, M.windows, M.windows]);
+  // club house 09-12: yoga hall (north), indoor gym, indoor games (south); glass front facing the play strip
+  const [cx0, cz0] = I(130, 180), [cx1, cz1] = I(262, 540), CX = (cx0 + cx1) / 2, CZ = (cz0 + cz1) / 2, CL = cx1 - cx0, CW = cz1 - cz0;
+  box(ext, M.stone, CL + 0.6, 0.12, CW + 0.6, CX, 0.06, CZ, { cast: false }); box(ext, M.deck, CL - 0.4, 0.04, CW - 0.4, CX, 0.14, CZ, { cast: false });
+  for (const [w, d, x, z] of [[CL, 0.05, CX, cz1], [0.05, CW, cx0, CZ], [0.05, CW, cx1, CZ]]) box(ext, M.glass, w, 3.7, d, x, 1.95, z, { cast: false });
+  for (let i = 0; i <= 12; i++) box(ext, M.frame, 0.08, 3.7, 0.1, cx0 + i * CL / 12, 1.95, cz1);
+  box(ext, M.wood, CL, 3.8, 0.3, CX, 1.9, cz0 + 0.1); box(ext, M.mirror, 10, 2.2, 0.03, cx0 + 6, 1.5, cz0 + 0.3, { cast: false });
+  box(ext, M.cove, CL - 2, 0.04, CW - 2, CX, 3.75, CZ, { cast: false });
+  const cu = new THREE.Mesh(tiledBox(CL + 1, 3.8, CW + 1), [M.windows, M.windows, M.plaster, M.plaster, M.windows, M.windows]);
   cu.position.set(CX, 5.9, CZ); cu.castShadow = cu.receiveShadow = true; ext.add(cu);
-  box(ext, M.white, 27, 0.45, 17, CX, 3.95, CZ); box(ext, M.white, 27.4, 0.5, 17.4, CX, 8.05, CZ);
-  for (let i = 0; i < 9; i++) box(ext, M.wood, 0.3, 3.8, 0.5, CX - 12 + i * 3, 5.9, CZ + 8.7);
-  const tms = [CX - 11, CX - 8.5, CX - 6, CX - 3.5, CX - 1];
+  box(ext, M.white, CL + 2, 0.45, CW + 2, CX, 3.95, CZ); box(ext, M.white, CL + 2.4, 0.5, CW + 2.4, CX, 8.05, CZ);
+  for (let i = 0; i < 13; i++) box(ext, M.wood, 0.3, 3.8, 0.5, cx0 + i * CL / 12, 5.9, cz1 + 0.75);
+  for (const [a, b] of [[0.3, 0.33], [0.66, 0.69]]) box(ext, M.white, 0.12, 3.6, CW - 0.2, cx0 + CL * a, 1.95, CZ);   // partitions between yoga, gym and games
+  const tms = [CX - 4, CX - 1.6, CX + 0.8, CX + 3.2];
   for (const x of tms) {
-    box(ext, M.charcoal, 0.8, 0.22, 1.9, x, 0.25, CZ + 4.4); box(ext, M.black, 0.6, 0.03, 1.6, x, 0.37, CZ + 4.35, { cast: false });
-    for (const s of [-1, 1]) box(ext, M.charcoal, 0.06, 1.1, 0.06, x + s * 0.36, 0.85, CZ + 5.25);
-    box(ext, M.charcoal, 0.8, 0.3, 0.12, x, 1.4, CZ + 5.28); box(ext, M.ev, 0.4, 0.2, 0.02, x, 1.42, CZ + 5.21, { cast: false });
+    box(ext, M.charcoal, 0.8, 0.22, 1.9, x, 0.25, CZ + 3.4); box(ext, M.black, 0.6, 0.03, 1.6, x, 0.37, CZ + 3.35, { cast: false });
+    for (const s of [-1, 1]) box(ext, M.charcoal, 0.06, 1.1, 0.06, x + s * 0.36, 0.85, CZ + 4.25);
+    box(ext, M.charcoal, 0.8, 0.3, 0.12, x, 1.4, CZ + 4.28); box(ext, M.ev, 0.4, 0.2, 0.02, x, 1.42, CZ + 4.21, { cast: false });
   }
-  box(ext, M.charcoal, 2.4, 0.9, 0.5, CX - 8, 0.6, CZ - 6.6);
-  for (let i = 0; i < 8; i++) cyl(ext, M.black, 0.07, 0.07, 0.3, CX - 9.1 + i * 0.32, 1.1, CZ - 6.6, 10).rotation.z = Math.PI / 2;
-  const mats = [[CX + 3, M.ev], [CX + 4.6, M.fabricRust], [CX + 6.2, M.blue]];
-  for (const [x, m] of mats) box(ext, m, 0.65, 0.02, 1.8, x, 0.17, CZ + 1, { cast: false });
-  box(ext, M.court, 2.7, 0.76, 1.5, CX + 8.5, 0.5, CZ - 3); box(ext, M.white, 2.75, 0.02, 0.02, CX + 8.5, 0.89, CZ - 3);   // table tennis
-  box(ext, M.teak, 3, 1.05, 0.7, CX + 9, 0.6, CZ - 6.4); plant(ext, CX + 11.5, CZ + 6.5, 1.6); plant(ext, CX - 11.6, CZ + 6.5, 1.6);
-  const clubLight = new THREE.PointLight(0xFFD9A8, 0, 26, 1.4); clubLight.position.set(CX, 3.3, CZ); ext.add(clubLight); interiorLights.push(clubLight);
-  box(ext, M.deck, 25, 0.1, 4, CX, 0.12, CZ + 9.6, { cast: false });
-  const cafe = [CX - 9, CX - 3, CX + 3, CX + 9];
-  for (const x of cafe) { cyl(ext, M.white2, 0.45, 0.45, 0.04, x, 0.76, CZ + 9.6, 20); cyl(ext, M.charcoal, 0.04, 0.04, 0.72, x, 0.4, CZ + 9.6, 6); umbrella(x, 0.12, CZ + 9.6, 1.4);
-    for (const s of [-1, 1]) { box(ext, M.wood, 0.45, 0.06, 0.45, x + s * 0.75, 0.47, CZ + 9.6); box(ext, M.wood, 0.06, 0.45, 0.45, x + s * 0.98, 0.72, CZ + 9.6); } }
-  sign('CLUB HOUSE', 'GAMES  ·  GYM  ·  YOGA', 8, 2, CX, 9.4, CZ + 8.4);
-  Object.assign(playRefs, { tms, mats, cafe, CZ });
+  box(ext, M.charcoal, 2.4, 0.9, 0.5, CX, 0.6, cz0 + 0.8);
+  for (let i = 0; i < 8; i++) cyl(ext, M.black, 0.07, 0.07, 0.3, CX - 1.1 + i * 0.32, 1.1, cz0 + 0.8, 10).rotation.z = Math.PI / 2;
+  const mats = [[cx0 + 4, M.ev], [cx0 + 6, M.fabricRust], [cx0 + 8, M.blue]];
+  for (const [x, m] of mats) box(ext, m, 0.65, 0.02, 1.8, x, 0.17, CZ, { cast: false });
+  for (const dx of [6, 10]) { box(ext, M.court, 2.7, 0.76, 1.5, cx1 - dx, 0.5, CZ); box(ext, M.white, 2.75, 0.02, 0.02, cx1 - dx, 0.89, CZ); }
+  box(ext, M.teak, 0.9, 0.7, 0.9, cx1 - 3, 0.5, CZ + 3); box(ext, M.woodDark, 2.4, 0.8, 1.3, cx1 - 3, 0.55, CZ - 3);
+  plant(ext, cx1 - 0.8, cz1 - 0.8, 1.6); plant(ext, cx0 + 0.8, cz1 - 0.8, 1.6);
+  const clubLight = new THREE.PointLight(0xFFD9A8, 0, 40, 1.4); clubLight.position.set(CX, 3.3, CZ); ext.add(clubLight); interiorLights.push(clubLight);
+  { const s = new THREE.Mesh(new THREE.PlaneGeometry(8, 2), new THREE.MeshBasicMaterial({ map: signTex('CLUB HOUSE', 'GAMES  ·  GYM  ·  YOGA'), transparent: true })); s.position.set(CX, 9.4, cz1 + 1.25); ext.add(s); box(ext, M.charcoal, 8.4, 1.8, 0.08, CX, 9.4, cz1 + 1.2, { cast: false }); }
+  Object.assign(playRefs, { tms, mats, CZ: CZ - 1 });
 
-  // 14 gazebos, 21 senior citizen lounge, 13 landscape garden
-  for (const [x, z] of [[-97, -35], [-97, 27], [40, -34.5], [-40, -34.5]]) {
-    for (const [p, q] of [[-1.7, -1.7], [1.7, -1.7], [-1.7, 1.7], [1.7, 1.7]]) box(ext, M.wood, 0.2, 2.7, 0.2, x + p, 1.35, z + q);
-    const rf = new THREE.Mesh(new THREE.ConeGeometry(3.1, 1.4, 8), M.wood); rf.position.set(x, 3.4, z); rf.castShadow = true; ext.add(rf);
-    for (const s of [-1, 1]) bench(x + s * 1.1, z, s > 0 ? -Math.PI / 2 : Math.PI / 2);
-  }
-  for (let i = 0; i < 9; i++) box(ext, M.wood, 0.18, 0.2, 5, 12 + i, 2.9, 0);
-  for (const [p, q] of [[11.5, -2.3], [20.5, -2.3], [11.5, 2.3], [20.5, 2.3]]) box(ext, M.white, 0.3, 2.8, 0.3, p, 1.4, q);
-  bench(14, -1.2, 0); bench(18, -1.2, 0); for (const x of [30, 42]) { cyl(ext, M.stone, 1.7, 1.8, 0.6, x, 0.3, 0, 24); tree(ext, x, 0, 1.5); bench(x - 2.6, 3, Math.PI); bench(x + 2.6, 3, Math.PI); }
-  for (let x = -100; x <= 62; x += 10) palm(ext, x + rand() * 2, 39, 7.5 + rand() * 2, 0.5);
-  for (let x = -100; x <= 88; x += 9) tree(ext, x + rand() * 3, -38.4, 1.2 + rand() * 0.5);
-  for (let z = -30; z <= 30; z += 9) tree(ext, -102, z, 1.3);
-  const fl1 = [], fl2 = [];
-  for (let x = -100; x <= 62; x += 0.9) (rand() < 0.5 ? fl1 : fl2).push([x, 0.28, 37.6 + rand() * 0.5, 0.32, 0.26, 0.32]);
-  inst(blobGeo, M.flower, fl1); inst(blobGeo, M.flower2, fl2);
-  for (let x = 12; x <= 56; x += 3) { for (const z of [27.4, 29.4]) box(ext, M.wood, 0.16, 2.7, 0.16, x, 1.35, z); box(ext, M.wood, 0.14, 0.2, 2.4, x, 2.75, 28.4); }
-  for (const z of [27.4, 29.4]) box(ext, M.wood, 44.4, 0.18, 0.14, 34, 2.62, z);
-  const creep = []; for (let x = 12; x <= 56; x += 1.2) creep.push([x, 2.95, 28.4 + (rand() - 0.5) * 1.4, 0.7, 0.3, 0.7]);
-  inst(blobGeo, M.leaf, creep);
-  for (let x = -54; x <= 52; x += 6) { cyl(ext, M.pot, 0.35, 0.28, 0.6, x, 0.3, 26.4, 12); bush(ext, x, 0.9, 26.4, 0.42, M.leaf); cyl(ext, M.pot, 0.35, 0.28, 0.6, x, 0.3, -25.2, 12); bush(ext, x, 0.9, -25.2, 0.42, M.leaf2); }
+  // 20 half basketball court and 21 senior citizen lounge in the courtyard
+  { const [bx0, bz0] = I(325, 735), [bx1, bz1] = I(375, 808), cx = (bx0 + bx1) / 2, cz = (bz0 + bz1) / 2;
+    box(ext, M.blue, bx1 - bx0, 0.04, bz1 - bz0, cx, 0.12, cz, { cast: false }); box(ext, M.courtOr, 3.6, 0.01, 3.4, bx0 + 1.8, 0.15, cz, { cast: false });
+    cyl(ext, M.charcoal, 0.1, 0.1, 3.4, bx0 - 0.2, 1.7, cz, 8); box(ext, M.line, 0.06, 1.05, 1.8, bx0 + 0.25, 3.3, cz);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.23, 0.02, 6, 20), M.red); ring.rotation.x = Math.PI / 2; ring.position.set(bx0 + 0.55, 3.05, cz); ext.add(ring);
+    playRefs.hoop = [bx0, cz]; }
+  { const [x, z] = I(392, 965); for (const [p, q] of [[-1.4, -1.4], [1.4, -1.4], [-1.4, 1.4], [1.4, 1.4]]) box(ext, M.white, 0.2, 2.7, 0.2, x + p, 1.35, z + q);
+    for (let i = 0; i < 6; i++) box(ext, M.wood, 0.14, 0.18, 3.2, x - 1.4 + i * 0.56, 2.8, z); bench(x, z - 1.1, 0); bench(x, z + 1.1, Math.PI); playRefs.lounge = [x, z]; }
+  for (const [px, py] of [[290, 900], [290, 1080], [395, 1060], [395, 1180], [140, 1180], [120, 850]]) { const [x, z] = I(px, py); cyl(ext, M.pot, 0.4, 0.32, 0.7, x, 0.35, z, 12); bush(ext, x, 1.0, z, 0.5, M.leaf); }
+
+  // all the trees: two instanced draws
+  const trunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.14, 0.22, 1, 6), M.trunk, TREES.length), crown = new THREE.InstancedMesh(blobGeo, M.hedge, TREES.length * 2);
+  const crown2 = new THREE.InstancedMesh(blobGeo, M.leaf, TREES.length);
+  TREES.forEach(([x, z, s], i) => { const h = 2.4 * s;
+    m4.compose(new THREE.Vector3(x, h / 2, z), q4.identity(), new THREE.Vector3(s, h, s)); trunk.setMatrixAt(i, m4);
+    m4.compose(new THREE.Vector3(x, h + 1.1 * s, z), q4.setFromAxisAngle(new THREE.Vector3(0, 1, 0), i), new THREE.Vector3(1.9 * s, 1.6 * s, 1.9 * s)); crown.setMatrixAt(i * 2, m4);
+    m4.compose(new THREE.Vector3(x + 0.6 * s, h + 0.4 * s, z - 0.4 * s), q4, new THREE.Vector3(1.3 * s, 1.1 * s, 1.3 * s)); crown.setMatrixAt(i * 2 + 1, m4);
+    m4.compose(new THREE.Vector3(x - 0.4 * s, h + 2.0 * s, z + 0.3 * s), q4, new THREE.Vector3(1.1 * s, 0.9 * s, 1.1 * s)); crown2.setMatrixAt(i, m4); });
+  for (const m of [trunk, crown, crown2]) { m.castShadow = true; m.receiveShadow = true; ext.add(m); }
 }
+
 
 /* supplied models: cars, scooter, pool (assets/models, meshopt + webp) */
 {
@@ -603,12 +639,14 @@ const PH = 1.0, FL = new THREE.Vector3();
     obj.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     return w;
   };
-  Promise.all(['camaro', 'K578', 'm05h', 'raptor', 'vino', 'pool'].map(load)).then(([camaro, k578, m05h, raptor, vino, pool]) => {
+  Promise.all(['camaro', 'K578', 'm05h', 'raptor', 'vino'].map(load)).then(([camaro, k578, m05h, raptor, vino, pool]) => {
     const cars = [[camaro, 4.8], [k578, 4.6], [m05h, 4.7], [raptor, 5.9]].filter((c) => c[0]).map(([s, l]) => fit(s, l));
+    cars.forEach((c) => c.traverse((o) => { if (o.isMesh) o.castShadow = false; }));
     if (cars.length) carSlots.forEach((g, i) => { g.clear(); g.add(cars[i % cars.length].clone()); });
     if (vino) {
       const v = fit(vino, 0);
-      for (const x0 of [-23, 6]) for (let i = 0; i < 12; i++) { const s = v.clone(); s.position.set(x0 + i * 0.9, 0, -16); ext.add(s); }
+      v.traverse((o) => { if (o.isMesh) o.castShadow = false; });
+      for (const x0 of [-6, 3]) for (let i = 0; i < 5; i++) { const s = v.clone(); s.position.set(x0 + i * 0.9, 0, -10); ext.add(s); HUMANS.push(s); }
     }
     if (false && pool) {                             // the FBX shipped without its texture files, so map its named materials to ours
       const poolTile = new THREE.MeshStandardMaterial({ color: 0x7FC6D6, roughness: 0.35 });
@@ -626,16 +664,6 @@ const PH = 1.0, FL = new THREE.Vector3();
   });
 }
 
-/* walking / jogging track with people on it */
-let trackCurve;
-{
-  const outer = rr(new THREE.Shape(), 120.4, 63.4, 9.2), hole = rr(new THREE.Path(), 115.6, 58.6, 6.8);
-  outer.holes.push(hole);
-  const tr = new THREE.Mesh(new THREE.ShapeGeometry(outer, 24), M.track);
-  tr.rotation.x = -Math.PI / 2; tr.position.set(0, 0.11, 0.5); tr.receiveShadow = true; ext.add(tr);
-  const mid = rr(new THREE.Shape(), 118, 61, 8);
-  trackCurve = new THREE.CatmullRomCurve3(mid.getSpacedPoints(600).slice(0, -1).map((p) => new THREE.Vector3(p.x, 0.12, -p.y + 0.5)), true);
-}
 const trackLen = trackCurve.getLength(), roadLen = roadCurve.getLength(), _rp = new THREE.Vector3(), _rt = new THREE.Vector3();
 /* ---------- people: proportioned bodies (hips, knees, shoulders, elbows) with a real walk cycle ---------- */
 const HG = {
@@ -655,6 +683,7 @@ const UNIFORM = sm(0x23324A);
 const pick = (a) => a[(rand() * a.length) | 0];
 const dsm = (m) => m.userData.ds || (m.userData.ds = Object.assign(m.clone(), { side: THREE.DoubleSide }));
 function mesh(geo, mat, p, x = 0, y = 0, z = 0) { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; p.add(m); return m; }
+const HUMANS = [];
 function human(parent, o = {}) {
   const skin = o.skin || pick(SKIN), top = o.top || pick(CLOTH), leg = o.leg || pick(PANTS), hairM = o.hair || HAIR;
   const g = new THREE.Group(); g.scale.setScalar(o.scale || 0.9 + rand() * 0.1); parent.add(g);
@@ -678,6 +707,7 @@ function human(parent, o = {}) {
   const [shR, elR] = limb(0.215, 0.56, HG.upper, HG.fore, arm, skin, 0.3, 0.27, chest);
   for (const e of [elL, elR]) mesh(HG.hand, skin, e, 0, -0.29, 0);
   shL.rotation.z = -0.07; shR.rotation.z = 0.07; elL.rotation.x = elR.rotation.x = -0.15;
+  HUMANS.push(g);
   return { g, body, chest, head, hipL, hipR, kneeL, kneeR, shL, shR, elL, elR, ph: rand() * 6 };
 }
 function walkPose(h, ph, run) {
@@ -717,11 +747,10 @@ function moveRunners(sec) {
 // people walking on the paths
 const walkers = [];
 const walker = (a, b, o, t = rand()) => walkers.push({ h: human(ext, o), a: new THREE.Vector3(...a), b: new THREE.Vector3(...b), t, dir: 1, v: 1.2 + rand() * 0.3, ph: rand() * 6 });
-walker([-60, 0.12, 34.4], [70, 0.12, 34.4], { female: true, dress: true }, 0.2); walker([-59, 0.12, 35], [70, 0.12, 35], {}, 0.2);
-walker([66, 0.12, 35.6], [-40, 0.12, 35.6], {}, 0.6); walker([12, 0.12, 28.1], [56, 0.12, 28.1], { female: true }, 0.4);
-walker([13, 0.12, 28.7], [56, 0.12, 28.7], { scale: 0.62 }, 0.42); walker([-50, 0.12, -26.4], [50, 0.12, -26.4], {}, 0.3);
-walker([50, 0.12, -27], [-30, 0.12, -27], { female: true, dress: true }, 0.7); walker([57, 0.12, 23.5], [57, 0.12, 34], {}, 0.5);
-walker([-59, 0.12, -24], [-59, 0.12, 30], { female: true }, 0.1);
+{ const W = (a, b, o, t) => walker([...a.slice(0, 1), 0.12, a[1]], [b[0], 0.12, b[1]], o, t);
+  W([-35, 22.6], [50, 22.6], { female: true, dress: true }, 0.2); W([-34, 23.2], [50, 23.2], {}, 0.2); W([50, 21.8], [-20, 21.8], {}, 0.6);
+  W([49.5, -8], [49.5, 18], { female: true }, 0.4); W([50.1, -6], [50.1, 18], { scale: 0.62 }, 0.42); W([-12, -1.5], [34, -1.5], {}, 0.3);
+  W([-16.8, -17], [-16.8, -3], { female: true, dress: true }, 0.7); W([47, 11], [56, 18], {}, 0.5); W([-60, 2.5], [-36, 2.5], { female: true }, 0.1); }
 anims.push((t, sec) => {
   for (const w of walkers) {
     const L = w.a.distanceTo(w.b); w.t += (w.dir * w.v * sec) / L;
@@ -733,18 +762,18 @@ anims.push((t, sec) => {
 });
 {
   const P = playRefs;
-  // pool: loungers, a swimmer, a friend at the edge
-  for (const i of [1, 3]) { const h = standAt(ext, 88.75, PH + 0.08, -20 + i * 2.8, -Math.PI / 2, { sleeveless: true, shorts: true, female: i === 3 }); lounge(h); }
-  const sw = standAt(ext, 78, PH - 0.2, -15, Math.PI / 2, { sleeveless: true, shorts: true }); sw.g.rotation.order = 'YXZ'; sw.g.rotation.x = Math.PI / 2 - 0.1;
-  anims.push((t, sec) => { const x = 78 + Math.sin(t * 0.18) * 5.5, d = Math.cos(t * 0.18); sw.g.position.x = x; sw.g.rotation.y = d > 0 ? Math.PI / 2 : -Math.PI / 2;
+  // pool: loungers on the park lawn, a swimmer, friends at the edge
+  for (const i of [1, 3]) { const [x0, z0] = I(372 + i * 22, 1328), ry = Math.PI * 0.62, x = x0 + i * 0.4; lounge(standAt(ext, x + Math.sin(ry) * 0.25, 0.08, z0 + Math.cos(ry) * 0.25, ry, { sleeveless: true, shorts: true, female: i === 3 })); }
+  const sw = standAt(ext, 64, PH - 0.32, -4.8, Math.PI / 2, { sleeveless: true, shorts: true }); sw.g.rotation.order = 'YXZ'; sw.g.rotation.x = Math.PI / 2 - 0.1;
+  anims.push((t, sec) => { const x = 64.6 + Math.sin(t * 0.22) * 3, d = Math.cos(t * 0.22); sw.g.position.x = x; sw.g.rotation.y = d > 0 ? Math.PI / 2 : -Math.PI / 2;
     sw.shL.rotation.x = -t * 4; sw.shR.rotation.x = -t * 4 + Math.PI; sw.hipL.rotation.x = Math.sin(t * 9) * 0.3; sw.hipR.rotation.x = -Math.sin(t * 9) * 0.3; });
-  const ps = standAt(ext, 65.2, PH + 0.05, -9.5, Math.PI / 2, { female: true, dress: true, top: CLOTH[10] }); ps.shR.rotation.x = -0.4;
-  sitAt(ext, 76, PH + 0.05, -6.0, Math.PI, { female: true, top: CLOTH[6] }, -0.3);
+  const ps = standAt(ext, 60.0, PH + 0.05, -6.5, Math.PI / 2, { female: true, dress: true, top: CLOTH[10] }); ps.shR.rotation.x = -0.4;
+  sitAt(ext, 60.35, PH + 0.05, -2.2, Math.PI / 2, { female: true, top: CLOTH[6] }, -0.3);
   // EV bay, lobby, gate
-  const ev = standAt(ext, -74.2, 0.1, -33.1, -2.5, {}); ev.shR.rotation.x = -0.8; ev.elR.rotation.x = -0.6;
-  standAt(ext, 60, 0.1, 12, Math.PI / 2, { top: UNIFORM, leg: UNIFORM });
-  standAt(ext, 73, 0.1, 25.5, 0.9, { top: UNIFORM, leg: UNIFORM });
-  standAt(ext, 58.4, 0.1, 21, Math.PI, { female: true, dress: true, top: CLOTH[7] }).shL.rotation.x = -0.3;
+  const ev = standAt(ext, -28.6, 0.1, -26.4, Math.PI, {}); ev.shR.rotation.x = -0.8; ev.elR.rotation.x = -0.6;
+  standAt(ext, FL.x + 2.8, 0.1, FL.z - 3.6, Math.PI / 2, { top: UNIFORM, leg: UNIFORM });
+  { const [gx, gz] = I(470, 1290); standAt(ext, gx, 0.1, gz, 0.7, { top: UNIFORM, leg: UNIFORM }); }
+  standAt(ext, FL.x + 1.5, 0.1, FL.z + 3, 0, { female: true, dress: true, top: CLOTH[7] }).shL.rotation.x = -0.3;
   // kids at play
   const kid = (o = {}) => Object.assign({ scale: 0.6 + rand() * 0.06, top: pick([CLOTH[4], CLOTH[11], CLOTH[1], CLOTH[8], CLOTH[10]]), shorts: true }, o);
   P.swings.forEach((pv) => { const k = human(pv, kid()); k.g.position.set(0, -2.32, 0.02); sitPose(k); k.shL.rotation.x = k.shR.rotation.x = -2.7; k.elL.rotation.x = k.elR.rotation.x = 0; });
@@ -760,21 +789,20 @@ anims.push((t, sec) => {
   // club house: treadmills, yoga, café
   P.tms.forEach((x, i) => { const h = standAt(ext, x, 0.38, P.CZ + 4.3, 0, { female: i % 2 === 1, shorts: true, sleeveless: i % 2 === 0, leg: PANTS[4] }); anims.push((t) => walkPose(h, t * (5 + i * 0.4) + i, i % 3 === 0)); });
   P.mats.forEach(([x], i) => { const h = standAt(ext, x, 0.18, P.CZ + 1, 0, { female: i !== 1, top: CLOTH[[0, 8, 9][i]], leg: PANTS[4] }); treePose(h); });
-  P.cafe.forEach((x, i) => { if (i % 2) return; sitAt(ext, x - 0.75, 0.12, P.CZ + 9.6, Math.PI / 2, { female: true }); sitAt(ext, x + 0.75, 0.12, P.CZ + 9.6, -Math.PI / 2, {}); });
+  P.cafe.forEach((x, i) => { if (i === 1) return; sitAt(ext, x - 0.75, 0.12, P.cafeZ, Math.PI / 2, { female: true }); sitAt(ext, x + 0.75, 0.12, P.cafeZ, -Math.PI / 2, {}); });
   // badminton, basketball, seniors, gazebo, courtyards
-  for (const [z, ry] of [[-10.5, 0], [-1.5, Math.PI]]) { const h = standAt(ext, -99, 0.12, z, ry, { shorts: true }); anims.push((t) => { h.shR.rotation.x = -2.4 + Math.sin(t * 3 + z) * 0.7; h.body.position.y = 0.92 + Math.abs(Math.sin(t * 3 + z)) * 0.04; }); }
-  const bb = standAt(ext, -12, 0.14, 1.5, Math.PI, { shorts: true, sleeveless: true }); anims.push((t) => { bb.shR.rotation.x = -0.9 + Math.sin(t * 6) * 0.25; bb.kneeL.rotation.x = bb.kneeR.rotation.x = 0.25 + Math.sin(t * 6) * 0.1; });
-  sitAt(ext, 14, 0.1, -1.2, 0, { hair: GREY, top: CLOTH[0] }); sitAt(ext, 18, 0.1, -1.2, 0, { hair: GREY, female: true, dress: true, top: CLOTH[7] });
-  sitAt(ext, 38.9, 0.1, -34.5, Math.PI / 2, { female: true, dress: true }); sitAt(ext, 41.1, 0.1, -34.5, -Math.PI / 2, {});
-  sitAt(ext, -98.1, 0.1, 27, Math.PI / 2, { hair: GREY }); sitAt(ext, -95.9, 0.1, 27, -Math.PI / 2, { hair: GREY, female: true, dress: true });
-  sitAt(ext, 27.4, 0.1, 3, Math.PI, { female: true }); sitAt(ext, 44.6, 0.1, 3, Math.PI, { hair: GREY }); sitAt(ext, 39.4, 0.1, 3, Math.PI, {});
+  { const [cx, cz] = P.court; for (const [z, ry] of [[cz - 4.5, 0], [cz + 4.5, Math.PI]]) { const h = standAt(ext, cx, 0.12, z, ry, { shorts: true }); anims.push((t) => { h.shR.rotation.x = -2.4 + Math.sin(t * 3 + z) * 0.7; h.body.position.y = 0.92 + Math.abs(Math.sin(t * 3 + z)) * 0.04; }); } }
+  const bb = standAt(ext, P.hoop[0] + 4.5, 0.14, P.hoop[1], -Math.PI / 2, { shorts: true, sleeveless: true }); anims.push((t) => { bb.shR.rotation.x = -0.9 + Math.sin(t * 6) * 0.25; bb.kneeL.rotation.x = bb.kneeR.rotation.x = 0.25 + Math.sin(t * 6) * 0.1; });
+  { const [x, z] = P.lounge; sitAt(ext, x, 0.1, z - 1.1, 0, { hair: GREY, top: CLOTH[0] }); sitAt(ext, x, 0.1, z + 1.1, Math.PI, { hair: GREY, female: true, dress: true, top: CLOTH[7] }); }
+  { const [x, z] = I(82, 150); sitAt(ext, x, 0.1, z, Math.PI / 2, { female: true, dress: true }); sitAt(ext, x + 3, 0.1, z, Math.PI / 2, {}); }
+  { const [x, z] = I(345, 215); sitAt(ext, x, 0.1, z, -Math.PI / 2, { hair: GREY }); const [x2, z2] = I(345, 250); sitAt(ext, x2, 0.1, z2, -Math.PI / 2, { female: true }); }
 }
 
 const extLamps = [];
-for (const x of [-80, -50, -20, 10, 40, 64]) {
-  cyl(ext, M.charcoal, 0.06, 0.08, 3.6, x, 1.8, 32.4, 8);
-  box(ext, M.lampGlow, 0.4, 0.25, 0.4, x, 3.65, 32.4, { cast: false });
-  const l = new THREE.PointLight(0xFFB868, 0, 20, 1.8); l.position.set(x, 3.3, 32.4); ext.add(l); extLamps.push(l);
+for (const [x, lz] of [[-30, 20.9], [-10, 20.9], [10, 20.9], [30, 20.9], [52, 12], [20, -17.4], [-5, -19.8], [57, -12]]) {
+  cyl(ext, M.charcoal, 0.06, 0.08, 3.6, x, 1.8, lz, 8);
+  box(ext, M.lampGlow, 0.4, 0.25, 0.4, x, 3.65, lz, { cast: false });
+  const l = new THREE.PointLight(0xFFB868, 0, 20, 1.8); l.position.set(x, 3.3, lz); ext.add(l); extLamps.push(l);
 }
 
 /* the city around both sites */
@@ -1179,16 +1207,16 @@ function placeSun() {
    THE TOUR: arrows (and keys) step through camera stops. No page scroll.
    ===================================================================== */
 const EXT = [
-  { id: 'hero', name: 'Welcome', word: 'SIGNIFA', k: 'Signifa Signature · Machabollaram, Hyderabad', t: ['Walk into', 'your home.'], d: 'Use the arrows to take the tour: in from the 60 ft road, through every amenity, then inside a 2 or 3 BHK.', p: [170, 95, 135], l: [-5, 0, 0] },
-  { id: 'road', name: 'The road', word: 'ARRIVE', k: 'Machabollaram, near Kompally', t: 'Turn in off the 60 ft road.', d: 'A gated community of 178 homes in one C+S+8 tower, with a clear title and 20+ amenities.', p: [101, 1.7, 46], l: [79, 5, 29], tag: ['Signifa Signature', 'Entry and exit', [79, 10, 29]] },
-  { id: 'gate', name: 'Entrance', word: 'ENTER', k: 'Entry and drive way', t: 'Through the gate, past the water body.', d: '24/7 security and CCTV, and a palm-lined drive way to every corner of the site.', p: [71, 1.75, 21], l: [40, 5, 32], via: [[84, 1.75, 34], [76, 1.75, 27]], tag: ['Water body', 'Entry and exit, drive way', [70, 3.2, 24]] },
-  { id: 'pool', name: 'Swimming pool', word: 'SPLASH', k: 'Swimming pool', t: 'An angled pool on a raised deck.', d: 'At the south end of the site: sun loungers, a shaded cabana, palms and the park beside it.', p: [78, 13, 6.5], l: [77, 1.2, -15], via: [[80, 6, 14]], tag: ['Swimming pool', 'Dress changing rooms behind', [77, 4.4, -15]] },
-  { id: 'ev', name: 'EV charging', word: 'CHARGE', k: 'EV charging point', t: 'Plug in under a solar roof.', d: 'At the north end, beside the guest rooms: covered EV bays with superchargers and a solar roof.', p: [-60, 4, -26.5], l: [-72, 1.2, -32], via: [[62, 6, 33], [-62, 6, 33], [-60, 5, 0]], tag: ['EV charging point', 'Guest rooms behind', [-70.6, 5.2, -31]] },
-  { id: 'jog', name: 'Jogging track', word: 'STRIDE', k: 'Walking and jogging track', t: 'A loop around the whole community.', d: 'Morning runs and evening walks past the tower, the gardens and the play areas.', p: [0, 3, 33], l: [0, 1, 31], follow: true, tag: ['Jogging track', 'A loop round the site', 'runner'] },
-  { id: 'play', name: 'Play and courts', word: 'PLAY', k: 'Kids play area and courts', t: 'Room to play, right downstairs.', d: 'Swings, a slide, see-saw and merry-go-round next to the club house, with the shuttle court and cricket net beyond.', p: [-64, 7, 21], l: [-80, 1, 7], tag: ['Kids play area', 'Shuttle court and cricket net beyond', [-79, 4.4, 8.5]] },
-  { id: 'club', name: 'Club house', word: 'UNWIND', k: 'Club house', t: 'Gym, yoga and a café deck.', d: 'Indoor gym, games, yoga and meditation hall, working pods and guest rooms.', p: [-66, 4.5, 4], l: [-84, 1.8, -12], tag: ['Club house', 'Gym, games, yoga and café', [-82, 6.2, -7]] },
-  { id: 'lobby', name: 'Lobby', word: 'LOBBY', k: 'Residents lobby', t: 'Home is a lift ride away.', d: 'Drop-off under the canopy, KONE lifts, intercom to security and 1 kVA power backup for every flat.', p: [70, 1.7, 23], l: [54, 2.2, 17], via: [[-60, 4, 33], [60, 4, 34]], tag: ['Residents lobby', 'KONE lifts', [56, 5.2, 17]] },
-  { id: 'finale', name: 'Choose a home', word: 'HOME', k: 'That was Signifa Signature', t: 'Now step inside a home.', d: '178 homes, 23 on every floor. Pick a plan to walk through it room by room.', p: [-190, 90, -120], l: [0, 6, 0], via: [[40, 40, 90]], actions: [['Walk through the 3 BHK', '3'], ['Walk through the 2 BHK', '2'], ['Project details', '@projects']] },
+  { id: 'hero', name: 'Welcome', word: 'SIGNIFA', k: 'Signifa Signature · Machabollaram, Hyderabad', t: ['Walk into', 'your home.'], d: 'Use the arrows to take the tour: in from the 60 ft road, through every amenity, then inside a 2 or 3 BHK.', p: [125, 80, 95], l: [-6, 0, -2] },
+  { id: 'road', name: 'The road', word: 'ARRIVE', k: 'Machabollaram, near Kompally', t: 'Turn in off the 60 ft road.', d: 'A gated community of 178 homes in one C+S+8 tower, with a clear title and 20+ amenities.', p: [69, 1.7, 30.5], l: [59.4, 4.5, 20.4], tag: ['Signifa Signature', 'Entry and exit', [59.4, 8.6, 20.4]] },
+  { id: 'gate', name: 'Entrance', word: 'ENTER', k: 'Entry and drive way', t: 'Through the gate, past the water body.', d: '24/7 security and CCTV, and a palm-lined drive way to every corner of the site.', p: [54, 1.75, 23.6], l: [20, 3, 23], via: [[59.5, 1.75, 20.5]], tag: ['Drive way', 'Water body at the gate', [35, 3.2, 22.6]] },
+  { id: 'pool', name: 'Swimming pool', word: 'SPLASH', k: 'Swimming pool', t: 'An angled pool on a raised deck.', d: 'At the south end of the site: sun loungers, a shaded cabana, palms and the park beside it.', p: [52.5, 15, -4], l: [65, 0.5, -4.5], via: [[50, 6, 18]], tag: ['Swimming pool', 'Kids\u2019 corner and changing rooms', [65, 3.4, -4]] },
+  { id: 'ev', name: 'EV charging', word: 'CHARGE', k: 'EV charging point', t: 'Plug in under a solar roof.', d: 'At the north end, beside the guest rooms: covered EV bays with superchargers and a solar roof.', p: [-11.5, 2.4, -23], l: [-28, 1.0, -24.2], via: [[52, 6, 23], [-40, 6, 23], [-40, 5, 0], [-17, 5, -1], [-17, 4, -21]], tag: ['EV charging point', 'Solar canopy, west edge', [-27, 5, -24.2]] },
+  { id: 'jog', name: 'Jogging track', word: 'STRIDE', k: 'Walking and jogging track', t: 'A loop around the whole community.', d: 'Morning runs and evening walks past the tower, the gardens and the play areas.', p: [0, 3, -27], l: [0, 1, -24], follow: true, tag: ['Jogging track', 'A loop round the site', 'runner'] },
+  { id: 'play', name: 'Play and courts', word: 'PLAY', k: 'Kids play area and courts', t: 'Room to play, right downstairs.', d: 'Swings, a slide, see-saw and merry-go-round next to the club house, with the shuttle court and cricket net beyond.', p: [-38, 8, 4], l: [-51, 0.5, -3], tag: ['Kids play area', 'Shuttle court and cricket net beyond', [-50.6, 4.4, -3]] },
+  { id: 'club', name: 'Club house', word: 'UNWIND', k: 'Club house', t: 'Gym, yoga and indoor games.', d: 'Indoor gym, games, yoga and meditation hall, working pods and guest rooms.', p: [-37, 4.5, -1], l: [-48, 1.8, -13], tag: ['Club house', 'Gym, games, yoga and café', [-46, 6.2, -6]] },
+  { id: 'lobby', name: 'Lobby', word: 'LOBBY', k: 'Residents lobby', t: 'Home is a lift ride away.', d: 'Drop-off under the canopy, KONE lifts, intercom to security and 1 kVA power backup for every flat.', p: [57, 1.7, 14.5], l: [45, 2.2, 11], via: [[-40, 5, 23], [52, 4, 22]], tag: ['Residents lobby', 'KONE lifts', [47, 5.2, 11]] },
+  { id: 'finale', name: 'Choose a home', word: 'HOME', k: 'That was Signifa Signature', t: 'Now step inside a home.', d: '178 homes, 23 on every floor. Pick a plan to walk through it room by room.', p: [-150, 85, -100], l: [0, 6, 0], via: [[40, 40, 80]], actions: [['Walk through the 3 BHK', '3'], ['Walk through the 2 BHK', '2'], ['Project details', '@projects']] },
 ];
 const toV = (space, v) => (space === 'int' ? new THREE.Vector3(...v).add(FLAT_ORIGIN) : new THREE.Vector3(...v));
 const prep = (s, space) => Object.assign(s, { space, P: toV(space, s.p), L: toV(space, s.l), via: (s.via || []).map((v) => toV(space, v)) });
@@ -1320,12 +1348,13 @@ function sunrise() {
 
 /* ---------- loop ---------- */
 const _dir = new THREE.Vector3(), _v = new THREE.Vector3(), Y = new THREE.Vector3(0, 1, 0);
-let lastT = performance.now(), doorOpen = 0;
+let lastT = performance.now(), doorOpen = 0, lowRes = false, slowFrames = 0;
+const _hp = new THREE.Vector3();
 setSun(+sunInput.value); resize(); buildPager(); updateUI();
 
 function frame(now) {
   requestAnimationFrame(frame);
-  const dt = Math.min((now - lastT) / 16.67, 3), sec = dt / 60, t = now / 1000; lastT = now;
+  const dt = Math.min((now - lastT) / 16.67, 8), sec = dt / 60, t = now / 1000; lastT = now;
   if (sunAnim) sunAnim(now);
   if (!canvasVisible) return;
   moveRunners(sec); anims.forEach((f) => f(t, sec)); fans.forEach((f) => (f.rotation.y += sec * 9));
@@ -1349,6 +1378,10 @@ function frame(now) {
   if (tourKey !== 'ext') { const F0 = FLATS[tourKey], want = THREE.MathUtils.clamp((pos - 1) * 2.5, 0, 1); doorOpen += (want - doorOpen) * (reduceMotion ? 1 : 0.12); F0.mainDoor.rotation.y = doorOpen * D2R(100);
     const ov = pos < 0.6; F0.labels.visible = ov; F0.tops.forEach((m) => (m.visible = !ov)); balRoof.visible = !ov; }
   ext.visible = space === 'ext'; flat.visible = space === 'int';
+  if (space === 'ext') for (const g of carSlots) g.visible = g.getWorldPosition(_hp).distanceToSquared(camera.position) < 110 * 110;
+  if (space === 'ext') for (const g of HUMANS) g.visible = g.getWorldPosition(_hp).distanceToSquared(camera.position) < 120 * 120;
+  // slow GPU: drop the resolution once instead of letting the tour crawl
+  if (!lowRes) { slowFrames = dt > 2.7 ? slowFrames + 1 : Math.max(0, slowFrames - 1); if (slowFrames > 90) { lowRes = true; renderer.setPixelRatio(1); renderer.setSize(innerWidth, innerHeight, false); } }
 
   const yawR = D2R(yaw + cpx * (space === 'int' ? 6 : 4));
   if (space === 'ext') { _v.copy(camP).sub(camL).applyAxisAngle(Y, yawR); camera.position.copy(camL).add(_v); camera.position.y += cpy * -1.2; camera.lookAt(camL); }
@@ -1372,7 +1405,7 @@ function frame(now) {
 }
 requestAnimationFrame(() => { $('#loaderNum').textContent = '100'; $('#loader').classList.add('done'); document.body.classList.remove('load-in'); if (!reduceMotion) sunrise(); });
 requestAnimationFrame(frame);
-window.signifaTour = { info: () => ({ ...renderer.info.render, geo: renderer.info.memory.geometries }), go, switchTour, openSheet, closeSheet, jump(key, i) { if (key !== tourKey) { tourKey = key; tour = TOURS[key]; space = tour[0].space; showFlat(key); placeSun(); buildPager(); } idx = pos = i; snap = true; doorOpen = i > 1 ? 1 : 0; updateUI(); } };
+window.signifaTour = { scene, info: () => ({ ...renderer.info.render, geo: renderer.info.memory.geometries }), go, switchTour, openSheet, closeSheet, jump(key, i) { if (key !== tourKey) { tourKey = key; tour = TOURS[key]; space = tour[0].space; showFlat(key); placeSun(); buildPager(); } idx = pos = i; snap = true; doorOpen = i > 1 ? 1 : 0; updateUI(); } };
 
 /* ---------- site visit -> WhatsApp ---------- */
 $('#visitForm')?.addEventListener('submit', (ev) => {
