@@ -34,15 +34,28 @@ document.body.classList.add('load-in');
 
 /* ================= renderer ================= */
 let renderer;
+const glFail = (why) => {
+  const c = $('#caption'); if (!c) return;
+  $('#capK').textContent = 'Signifa Signature · 3D tour';
+  $('#capT').textContent = 'Your browser could not start the 3D view.';
+  $('#capD').textContent = why || 'Turn on hardware acceleration (Settings, System, "Use graphics acceleration when available"), then fully close and reopen the browser. In Brave, also allow this site under Shields > Fingerprinting.';
+  $('#capA').innerHTML = '<button class="btn" type="button" onclick="location.reload()">Try again</button>';
+};
 try {
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
 } catch (e) {
+  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true }); } catch (e2) { renderer = null; }
+}
+if (!renderer) {
+  const e = new Error('WebGL unavailable'); glFail();
   document.documentElement.classList.add('no-webgl');
   $('#loader').classList.add('done');
   document.body.classList.remove('load-in');
   throw e;
 }
 renderer.setClearColor(0x000000, 0);
+canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); glFail('The graphics card stopped the 3D view. Close other heavy tabs, then press Try again.'); });
+canvas.addEventListener('webglcontextrestored', () => location.reload());
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
